@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "skipLibCheck": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "noImplicitAny": false,
+    "esModuleInterop": true,
+    "target": "es6",
+    "sourceMap": true,
+    "outDir": "./build",
+    "baseUrl": "./server"
+  },
+  "exclude": [
+    "node_modules", 
+    "pages",
+    "lib"
+  ],
+  "include": [
+    "server"
+  ]
+}

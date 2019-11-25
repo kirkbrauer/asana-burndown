@@ -1,0 +1,63 @@
+type PageInfo {
+  offset: String
+  hasNextPage: Boolean!
+}
+
+type Workspace {
+  id: ID!
+  name: String
+}
+
+type WorkspaceConnection {
+  nodes: [Workspace]
+  nextPage: String
+}
+
+type ProjectStatus {
+  color: String
+  text: String
+}
+
+type Project {
+  id: ID!
+  name: String
+  archived: Boolean!
+  status: ProjectStatus
+  createdAt: String!
+  modifiedAt: String!
+}
+  
+type ProjectConnection {
+  nodes: [Project]
+  nextPage: String
+}
+
+type Task {
+  id: ID!
+  name: String
+  storyPoints: Float
+  completed: Boolean
+  completedAt: String
+  dueOn: String
+  createdAt: String
+  modifiedAt: String
+  defaultPoints: Boolean
+}
+
+type TaskConnection {
+  nodes: [Task]
+  nextPage: String
+}
+
+type User {
+  id: ID!
+  email: String!
+  name: String!
+}
+
+type Query {
+  viewer: User
+  workspaces(first: Int, after: String): WorkspaceConnection!
+  projects(workspace: ID!, first: Int, after: String, archived: Boolean): ProjectConnection!
+  tasks(project: ID!, first: Int, after: String): TaskConnection!
+}

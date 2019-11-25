@@ -1,0 +1,15 @@
+# codegen.yml
+schema: schema.graphql
+documents: ./graphql/*.graphql
+overwrite: true
+generates:
+  ./graphql/index.tsx:
+    plugins:
+      - typescript
+      - typescript-operations
+      - typescript-react-apollo
+    config:
+      withHooks: true
+      withHOC: false
+      withComponent: false
+      namingConvention: keep
