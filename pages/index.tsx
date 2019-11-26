@@ -1,18 +1,29 @@
-import React from 'react';
-import Container from '@material-ui/core/Container';
-import Typography from '@material-ui/core/Typography';
-import Box from '@material-ui/core/Box';
+import React, { useState, useEffect } from 'react';
+import Navigation from '../components/Navigation';
+import { useWorkspaces } from '../lib/hooks';
+import { useRouter } from 'next/router';
+import { useAppContext } from '../lib/context';
+import WorkspaceSelector from '../components/WorkspaceSelector';
 
-const Index = () => {
-  return (
-    <Container maxWidth="sm">
-      <Box my={4}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Home Page
-        </Typography>
-      </Box>
-    </Container>
-  );
+const Home = () => {
+  const { workspaceId, setWorkspaceId } = useAppContext();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (workspaceId) {
+      setWorkspaceId(workspaceId);
+      router.push('/projects', `/w/${workspaceId}/projects`, { query: { workspaceId } });
+    }
+  }, [workspaceId]);
+
+  if (!workspaceId) {
+    return (
+      <Navigation>
+        <WorkspaceSelector open={true} onClose={() => {}} />
+      </Navigation>
+    );
+  }
+  return <Navigation />;
 };
 
-export default Index;
+export default Home;

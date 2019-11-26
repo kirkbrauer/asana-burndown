@@ -1,5 +1,8 @@
 {
   "extends": "tslint-config-airbnb",
+  "linterOptions": {
+    "exclude": ["graphql/index.tsx"]
+  },
   "rules": {
     "no-trailing-whitespace": false,
     "trailing-comma": false,

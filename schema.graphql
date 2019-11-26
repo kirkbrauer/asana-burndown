@@ -60,4 +60,5 @@ type Query {
   workspaces(first: Int, after: String): WorkspaceConnection!
   projects(workspace: ID!, first: Int, after: String, archived: Boolean): ProjectConnection!
   tasks(project: ID!, first: Int, after: String): TaskConnection!
+  workspace(id: ID!): Workspace
 }

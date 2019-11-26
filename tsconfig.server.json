@@ -4,6 +4,7 @@
     "skipLibCheck": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
     "noImplicitAny": false,
     "esModuleInterop": true,
     "target": "es6",

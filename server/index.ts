@@ -2,8 +2,8 @@ import next from 'next';
 import express from 'express';
 import session from 'express-session';
 import dotenv from 'dotenv';
-import redis from 'redis';
 import connectRedis from 'connect-redis';
+import cookieParser from 'cookie-parser';
 
 // Configure dotenv
 dotenv.config();
@@ -16,13 +16,13 @@ import configurePassport from './auth';
 import configureApolloServer from './apollo';
 import configureRoutes from './routes';
 import connectToDatabase from './db';
+import redisClient from './redis';
 
 // Create Next.js app and request handler
 const app = next({ dev });
 
 // Create the redis session store
 const RedisStore = connectRedis(session);
-const redisClient = redis.createClient({ url: process.env.REDIS_URL });
 
 // Prepare the Next.js app
 app.prepare().then(async () => {
@@ -36,6 +36,8 @@ app.prepare().then(async () => {
     resave: false,
     saveUninitialized: false,
   }));
+
+  server.use(cookieParser());
 
   // Configure passport
   configurePassport(server);

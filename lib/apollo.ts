@@ -13,10 +13,10 @@ export default withApollo(({ ctx, headers, initialState }) => {
       uri: process.env.API_URL,
       credentials: 'include',
       headers: !isBrowser && {
-        'Cookie': headers.cookie
+        Cookie: headers.cookie
       },
       fetch: !isBrowser && fetch
     }),
     cache: new InMemoryCache().restore(initialState || {})
   });
-});
+}, { getDataFromTree: 'ssr' });

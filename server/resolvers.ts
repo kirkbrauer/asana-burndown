@@ -3,13 +3,12 @@ import asana from 'asana';
 import { encodeId, decodeId } from 'opaqueid';
 import { connection } from './db';
 import User from './entities/User';
+import { ContextType } from './apollo';
 
-// Create an Asana client
-const client = asana.Client.create().useAccessToken(process.env.ASANA_TOKEN);
-
-const resolvers: IResolvers<any, any> = {
+const resolvers: IResolvers<{}, ContextType> = {
   Query: {
-    async workspaces(obj: any, { first, after }) {
+    async workspaces(obj: any, { first, after }, { getClient }) {
+      const client = await getClient();
       // Decode the cursor
       let offset = undefined;
       if (after) {
@@ -18,17 +17,13 @@ const resolvers: IResolvers<any, any> = {
       // Load the workspaces
       const workspaceData = await client.workspaces.findAll({ offset, limit: first || 10 });
       // Return the data
-      const workspaces = workspaceData.data.map(workspace => ({
-        id: encodeId(workspace.gid, 'Workspace'),
-        name: workspace.name
-      }));
-      // Return the data
       return {
-        nodes: workspaces,
+        nodes: workspaceData.data,
         nextPage: workspaceData._response.next_page ? encodeId(workspaceData._response.next_page.offset, 'C/Workspace') : undefined
       };
     },
-    async projects(obj: any, { workspace, first, after, archived }) {
+    async projects(obj: any, { workspace, first, after, archived }, { getClient }) {
+      const client = await getClient();
       // Decode the workspace cursor
       const workspaceId = decodeId(workspace, 'Workspace');
       // Decode the cursor
@@ -58,7 +53,8 @@ const resolvers: IResolvers<any, any> = {
         nextPage: projectData._response.next_page ? encodeId(projectData._response.next_page.offset, 'C/Project') : undefined
       };
     },
-    async tasks(obj: any, { project, first, after }) {
+    async tasks(obj: any, { project, first, after }, { getClient }) {
+      const client = await getClient();
       // Decode the project cursor
       const projectId = decodeId(project, 'Project');
       // Decode the cursor
@@ -95,11 +91,20 @@ const resolvers: IResolvers<any, any> = {
     },
     async viewer(obj: any, {}, context) {
       return context.getUser();
+    },
+    async workspace(obj: any, { id }, { getClient }) {
+      const client = await getClient();
+      return client.workspaces.findById(decodeId(id, 'Workspace') as number);
     }
   },
   User: {
     id(user: User) {
       return encodeId(user.id, 'User');
+    }
+  },
+  Workspace: {
+    id(workspace: asana.resources.Workspaces.Type) {
+      return encodeId(workspace.gid, 'Workspace');
     }
   }
 };

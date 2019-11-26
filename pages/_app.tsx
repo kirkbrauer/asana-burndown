@@ -3,12 +3,35 @@ import App from 'next/app';
 import Head from 'next/head';
 import { ThemeProvider } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
-import theme from '../lib/theme';
+import { lightTheme, darkTheme } from '../lib/theme';
 import withApollo from '../lib/apollo';
 import ApolloClient from 'apollo-client';
 import { ApolloProvider } from '@apollo/react-hooks';
+import { RouterProvider } from 'use-next-route';
+import { AppContextProvider } from '../lib/context';
+import Cookies from 'js-cookie';
+import cookie from 'cookie';
 
-class MyApp extends App<{ apollo: ApolloClient<any> }> {
+type AppProps = {
+  apollo: ApolloClient<any>
+  darkMode: boolean,
+  workspaceId: string
+};
+
+type AppState = {
+  workspaceId: string,
+  darkMode: boolean
+};
+
+class MyApp extends App<AppProps, {}, AppState> {
+  constructor(props: any) {
+    super(props);
+    this.state = {
+      workspaceId: props.router.query.workspaceId || props.workspaceId,
+      darkMode: props.darkMode
+    };
+  }
+
   componentDidMount() {
     // Remove the server-side injected CSS.
     const jssStyles = document.querySelector('#jss-server-side');
@@ -18,21 +41,52 @@ class MyApp extends App<{ apollo: ApolloClient<any> }> {
   }
 
   render() {
-    const { Component, pageProps, apollo } = this.props;
+    const { Component, pageProps, apollo, router } = this.props;
+    const { workspaceId, darkMode } = this.state;
     return (
       <React.Fragment>
         <Head>
           <title>Asana Burndown Chart</title>
         </Head>
-        <ThemeProvider theme={theme}>
+        <ThemeProvider theme={darkMode ? darkTheme : lightTheme}>
           <CssBaseline />
-          <ApolloProvider client={apollo}>
-            <Component {...pageProps} />
-          </ApolloProvider>
+          <RouterProvider route={router.route}>
+            <AppContextProvider value={{
+              workspaceId,
+              darkMode,
+              setWorkspaceId: (id) => {
+                // Update the app workspace ID
+                this.setState({ workspaceId: id });
+                // Update the recent workspace ID in cookies
+                Cookies.set('workspaceId', id);
+              },
+              setDarkMode: (enabled) => {
+                // Switch the app theme
+                this.setState({ darkMode: enabled });
+                // Update the user preferences
+                Cookies.set('darkMode', String(enabled));
+              }
+            }}>
+              <ApolloProvider client={apollo}>
+                <Component {...pageProps} />
+              </ApolloProvider>
+            </AppContextProvider>
+          </RouterProvider>
         </ThemeProvider>
       </React.Fragment>
     );
   }
 }
+
+MyApp.getInitialProps = async ({ ctx }) => {
+  if (ctx.req) {
+    const cookies = (ctx.req as any).cookies;
+    return {
+      pageProps: {},
+      darkMode: cookies.darkMode === 'true',
+      workspaceId: cookies.workspaceId
+    };
+  }
+};
 
 export default withApollo(MyApp);
