@@ -1,3 +1,8 @@
+scalar EmailAddress
+scalar DateTime
+scalar Date
+scalar URL
+
 type PageInfo {
   offset: String
   hasNextPage: Boolean!
@@ -6,6 +11,8 @@ type PageInfo {
 type Workspace {
   id: ID!
   name: String
+  projects(first: Int, after: String, archived: Boolean): ProjectConnection!
+  tasks(first: Int, after: String): TaskConnection!
 }
 
 type WorkspaceConnection {
@@ -14,17 +21,23 @@ type WorkspaceConnection {
 }
 
 type ProjectStatus {
-  color: String
   text: String
+  color: String
 }
 
 type Project {
   id: ID!
   name: String
-  archived: Boolean!
+  description: String
+  color: String
   status: ProjectStatus
-  createdAt: String!
-  modifiedAt: String!
+  archived: Boolean!
+  createdAt: DateTime!
+  modifiedAt: DateTime!
+  dueOn: Date
+  startOn: Date
+  tasks(first: Int, after: String): TaskConnection!
+  workspace: Workspace!
 }
   
 type ProjectConnection {
@@ -37,10 +50,10 @@ type Task {
   name: String
   storyPoints: Float
   completed: Boolean
-  completedAt: String
-  dueOn: String
-  createdAt: String
-  modifiedAt: String
+  completedAt: DateTime
+  dueOn: Date
+  createdAt: DateTime
+  modifiedAt: DateTime
   defaultPoints: Boolean
 }
 
@@ -49,16 +62,25 @@ type TaskConnection {
   nextPage: String
 }
 
+enum PhotoSize {
+  SIZE_21X21
+  SIZE_27X27
+  SIZE_36X36
+  SIZE_60X60
+  SIZE_128X128
+}
+
 type User {
   id: ID!
-  email: String!
+  email: EmailAddress!
   name: String!
+  photo(size: PhotoSize!): URL
+  workspaces(first: Int, after: String): WorkspaceConnection!
 }
 
 type Query {
   viewer: User
-  workspaces(first: Int, after: String): WorkspaceConnection!
-  projects(workspace: ID!, first: Int, after: String, archived: Boolean): ProjectConnection!
-  tasks(project: ID!, first: Int, after: String): TaskConnection!
   workspace(id: ID!): Workspace
+  project(id: ID!): Project
+  task(id: ID!): Task
 }

@@ -1,8 +1,10 @@
 query Workspaces {
-  workspaces {
-    nodes {
-      id
-      name
+  viewer {
+    id
+    workspaces {
+      nodes {
+        ...Workspace
+      }
     }
   }
 }

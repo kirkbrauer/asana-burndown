@@ -12,12 +12,8 @@
     "outDir": "./build",
     "baseUrl": "./server"
   },
-  "exclude": [
-    "node_modules", 
-    "pages",
-    "lib"
-  ],
   "include": [
-    "server"
+    "server",
+    "graphql"
   ]
 }

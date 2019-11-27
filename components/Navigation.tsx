@@ -94,7 +94,7 @@ const useStyles = makeStyles((theme: Theme) =>
       marginLeft: theme.spacing(2)
     },
     userCaption: {
-      marginLeft: theme.spacing(1)
+      marginLeft: theme.spacing(2)
     },
     userButton: {
       marginLeft: 'auto',
@@ -134,7 +134,7 @@ const Navigation: FunctionComponent = ({ children }) => {
     userInfo = (
       <div className={classes.userInfoContainer}>
         <div className={classes.userInfo}>
-          <Avatar className={classes.avatar}>{initials}</Avatar>
+          <Avatar className={classes.avatar} src={viewer.photo}>{!viewer.photo && initials}</Avatar>
           <div className={classes.userCaption}>
             <Typography variant="body1">{viewer.name}</Typography>
             <Typography variant="caption">{viewer.email}</Typography>

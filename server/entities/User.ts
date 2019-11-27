@@ -1,7 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
-export default class User {
+export class User {
   
   @PrimaryGeneratedColumn()
   id: number;
@@ -19,3 +19,5 @@ export default class User {
   refreshToken?: string;
 
 }
+
+export default User;

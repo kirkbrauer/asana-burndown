@@ -9,7 +9,14 @@ export type Scalars = {
   Boolean: boolean,
   Int: number,
   Float: number,
+  EmailAddress: string,
+  URL: string,
+  DateTime: Date,
+  Date: Date,
 };
+
+
+
 
 export type PageInfo = {
    __typename?: 'PageInfo',
@@ -17,14 +24,34 @@ export type PageInfo = {
   hasNextPage: Scalars['Boolean'],
 };
 
+export enum PhotoSize {
+  SIZE_21X21 = 'SIZE_21X21',
+  SIZE_27X27 = 'SIZE_27X27',
+  SIZE_36X36 = 'SIZE_36X36',
+  SIZE_60X60 = 'SIZE_60X60',
+  SIZE_128X128 = 'SIZE_128X128'
+}
+
 export type Project = {
    __typename?: 'Project',
   id: Scalars['ID'],
   name?: Maybe<Scalars['String']>,
-  archived: Scalars['Boolean'],
+  description?: Maybe<Scalars['String']>,
+  color?: Maybe<Scalars['String']>,
   status?: Maybe<ProjectStatus>,
-  createdAt: Scalars['String'],
-  modifiedAt: Scalars['String'],
+  archived: Scalars['Boolean'],
+  createdAt: Scalars['DateTime'],
+  modifiedAt: Scalars['DateTime'],
+  dueOn?: Maybe<Scalars['Date']>,
+  startOn?: Maybe<Scalars['Date']>,
+  tasks: TaskConnection,
+  workspace: Workspace,
+};
+
+
+export type ProjecttasksArgs = {
+  first?: Maybe<Scalars['Int']>,
+  after?: Maybe<Scalars['String']>
 };
 
 export type ProjectConnection = {
@@ -35,42 +62,30 @@ export type ProjectConnection = {
 
 export type ProjectStatus = {
    __typename?: 'ProjectStatus',
-  color?: Maybe<Scalars['String']>,
   text?: Maybe<Scalars['String']>,
+  color?: Maybe<Scalars['String']>,
 };
 
 export type Query = {
    __typename?: 'Query',
   viewer?: Maybe<User>,
-  workspaces: WorkspaceConnection,
-  projects: ProjectConnection,
-  tasks: TaskConnection,
   workspace?: Maybe<Workspace>,
-};
-
-
-export type QueryworkspacesArgs = {
-  first?: Maybe<Scalars['Int']>,
-  after?: Maybe<Scalars['String']>
-};
-
-
-export type QueryprojectsArgs = {
-  workspace: Scalars['ID'],
-  first?: Maybe<Scalars['Int']>,
-  after?: Maybe<Scalars['String']>,
-  archived?: Maybe<Scalars['Boolean']>
-};
-
-
-export type QuerytasksArgs = {
-  project: Scalars['ID'],
-  first?: Maybe<Scalars['Int']>,
-  after?: Maybe<Scalars['String']>
+  project?: Maybe<Project>,
+  task?: Maybe<Task>,
 };
 
 
 export type QueryworkspaceArgs = {
+  id: Scalars['ID']
+};
+
+
+export type QueryprojectArgs = {
+  id: Scalars['ID']
+};
+
+
+export type QuerytaskArgs = {
   id: Scalars['ID']
 };
 
@@ -80,10 +95,10 @@ export type Task = {
   name?: Maybe<Scalars['String']>,
   storyPoints?: Maybe<Scalars['Float']>,
   completed?: Maybe<Scalars['Boolean']>,
-  completedAt?: Maybe<Scalars['String']>,
-  dueOn?: Maybe<Scalars['String']>,
-  createdAt?: Maybe<Scalars['String']>,
-  modifiedAt?: Maybe<Scalars['String']>,
+  completedAt?: Maybe<Scalars['DateTime']>,
+  dueOn?: Maybe<Scalars['Date']>,
+  createdAt?: Maybe<Scalars['DateTime']>,
+  modifiedAt?: Maybe<Scalars['DateTime']>,
   defaultPoints?: Maybe<Scalars['Boolean']>,
 };
 
@@ -93,17 +108,46 @@ export type TaskConnection = {
   nextPage?: Maybe<Scalars['String']>,
 };
 
+
 export type User = {
    __typename?: 'User',
   id: Scalars['ID'],
-  email: Scalars['String'],
+  email: Scalars['EmailAddress'],
   name: Scalars['String'],
+  photo?: Maybe<Scalars['URL']>,
+  workspaces: WorkspaceConnection,
+};
+
+
+export type UserphotoArgs = {
+  size: PhotoSize
+};
+
+
+export type UserworkspacesArgs = {
+  first?: Maybe<Scalars['Int']>,
+  after?: Maybe<Scalars['String']>
 };
 
 export type Workspace = {
    __typename?: 'Workspace',
   id: Scalars['ID'],
   name?: Maybe<Scalars['String']>,
+  projects: ProjectConnection,
+  tasks: TaskConnection,
+};
+
+
+export type WorkspaceprojectsArgs = {
+  first?: Maybe<Scalars['Int']>,
+  after?: Maybe<Scalars['String']>,
+  archived?: Maybe<Scalars['Boolean']>
+};
+
+
+export type WorkspacetasksArgs = {
+  first?: Maybe<Scalars['Int']>,
+  after?: Maybe<Scalars['String']>
 };
 
 export type WorkspaceConnection = {
@@ -119,7 +163,7 @@ export type ViewerQuery = (
   { __typename?: 'Query' }
   & { viewer: Maybe<(
     { __typename?: 'User' }
-    & Pick<User, 'id' | 'email' | 'name'>
+    & Pick<User, 'id' | 'email' | 'name' | 'photo'>
   )> }
 );
 
@@ -132,7 +176,7 @@ export type WorkspaceQuery = (
   { __typename?: 'Query' }
   & { workspace: Maybe<(
     { __typename?: 'Workspace' }
-    & Pick<Workspace, 'id' | 'name'>
+    & WorkspaceFragment
   )> }
 );
 
@@ -141,22 +185,37 @@ export type WorkspacesQueryVariables = {};
 
 export type WorkspacesQuery = (
   { __typename?: 'Query' }
-  & { workspaces: (
-    { __typename?: 'WorkspaceConnection' }
-    & { nodes: Maybe<Array<Maybe<(
-      { __typename?: 'Workspace' }
-      & Pick<Workspace, 'id' | 'name'>
-    )>>> }
-  ) }
+  & { viewer: Maybe<(
+    { __typename?: 'User' }
+    & Pick<User, 'id'>
+    & { workspaces: (
+      { __typename?: 'WorkspaceConnection' }
+      & { nodes: Maybe<Array<Maybe<(
+        { __typename?: 'Workspace' }
+        & WorkspaceFragment
+      )>>> }
+    ) }
+  )> }
 );
 
+export type WorkspaceFragment = (
+  { __typename?: 'Workspace' }
+  & Pick<Workspace, 'id' | 'name'>
+);
 
+export const WorkspaceFragmentDoc = gql`
+    fragment Workspace on Workspace {
+  id
+  name
+}
+    `;
 export const ViewerDocument = gql`
     query Viewer {
   viewer {
     id
     email
     name
+    photo(size: SIZE_60X60)
   }
 }
     `;
@@ -188,11 +247,10 @@ export type ViewerQueryResult = ApolloReactCommon.QueryResult<ViewerQuery, Viewe
 export const WorkspaceDocument = gql`
     query Workspace($id: ID!) {
   workspace(id: $id) {
-    id
-    name
+    ...Workspace
   }
 }
-    `;
+    ${WorkspaceFragmentDoc}`;
 
 /**
  * __useWorkspaceQuery__
@@ -221,14 +279,16 @@ export type WorkspaceLazyQueryHookResult = ReturnType<typeof useWorkspaceLazyQue
 export type WorkspaceQueryResult = ApolloReactCommon.QueryResult<WorkspaceQuery, WorkspaceQueryVariables>;
 export const WorkspacesDocument = gql`
     query Workspaces {
-  workspaces {
-    nodes {
-      id
-      name
+  viewer {
+    id
+    workspaces {
+      nodes {
+        ...Workspace
+      }
     }
   }
 }
-    `;
+    ${WorkspaceFragmentDoc}`;
 
 /**
  * __useWorkspacesQuery__

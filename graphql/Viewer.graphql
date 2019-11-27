@@ -3,5 +3,6 @@ query Viewer {
     id
     email
     name
+    photo(size: SIZE_60X60)
   }
 }

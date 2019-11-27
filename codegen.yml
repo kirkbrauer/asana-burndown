@@ -1,8 +1,17 @@
 # codegen.yml
 schema: schema.graphql
-documents: ./graphql/*.graphql
+documents: ./graphql/**/*.graphql
 overwrite: true
 generates:
+  ./server/graphql/types.ts:
+    plugins:
+      - typescript
+    config:
+      scalars:
+        DateTime: Date
+        Date: Date
+        EmailAddress: string
+        URL: string
   ./graphql/index.tsx:
     plugins:
       - typescript
@@ -13,3 +22,8 @@ generates:
       withHOC: false
       withComponent: false
       namingConvention: keep
+      scalars:
+        DateTime: Date
+        Date: Date
+        EmailAddress: string
+        URL: string

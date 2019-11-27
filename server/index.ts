@@ -17,6 +17,7 @@ import configureApolloServer from './apollo';
 import configureRoutes from './routes';
 import connectToDatabase from './db';
 import redisClient from './redis';
+import { asanaClientMiddleware } from './asanaClient';
 
 // Create Next.js app and request handler
 const app = next({ dev });
@@ -37,10 +38,14 @@ app.prepare().then(async () => {
     saveUninitialized: false,
   }));
 
+  // Use cookie parser middleware
   server.use(cookieParser());
 
   // Configure passport
   configurePassport(server);
+
+  // Use the asana client middleware on the graphql endpoint
+  server.use('/graphql', asanaClientMiddleware);
 
   // Configure apollo server
   configureApolloServer(server);

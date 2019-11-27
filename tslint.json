@@ -1,7 +1,7 @@
 {
   "extends": "tslint-config-airbnb",
   "linterOptions": {
-    "exclude": ["graphql/index.tsx"]
+    "exclude": ["graphql/index.tsx","server/graphql/types.ts"]
   },
   "rules": {
     "no-trailing-whitespace": false,
