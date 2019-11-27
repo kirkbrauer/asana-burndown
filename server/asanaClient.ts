@@ -6,12 +6,16 @@ import { Workspace, Project, Task, User } from './graphql/types';
 import { Request, Response, NextFunction } from 'express';
 
 export function asanaClientMiddleware(req: Request, res: Response, next: NextFunction) {
-  // Create a new asana client for the request
-  createAsanaClient(req.user as UserEntity).then((client) => {
-    // Set the asana client on the request
-    (req as any).client = client;
+  if (req.user) {
+    // Create a new asana client for the request
+    createAsanaClient(req.user as UserEntity).then((client) => {
+      // Set the asana client on the request
+      (req as any).client = client;
+      next();
+    });
+  } else {
     next();
-  });
+  }
 }
 
 export async function createAsanaClient(user: UserEntity): Promise<asana.Client> {
@@ -67,9 +71,6 @@ export function convertProject(project: asana.resources.Projects.Type): Project 
       id: project.workspace.gid,
       projects: {
         nodes: []
-      },
-      tasks: {
-        nodes: []
       }
     }
   };
@@ -80,9 +81,6 @@ export function convertWorkspace(workspace: asana.resources.Workspaces.Type | as
     id: workspace.gid,
     name: workspace.name,
     projects: {
-      nodes: []
-    },
-    tasks: {
       nodes: []
     }
   };

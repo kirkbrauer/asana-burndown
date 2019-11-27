@@ -1,0 +1,11 @@
+query Projects($workspaceId: ID!, $first: Int, $after: String, $archived: Boolean) {
+  workspace(id: $workspaceId) {
+    id
+    projects(first: $first, after: $after, archived: $archived) {
+      nodes {
+        ...Project
+      }
+      nextPage
+    }
+  }
+}

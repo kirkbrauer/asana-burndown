@@ -36,6 +36,7 @@ export type Project = {
   description?: Maybe<Scalars['String']>,
   color?: Maybe<Scalars['String']>,
   status?: Maybe<ProjectStatus>,
+  url?: Maybe<Scalars['URL']>,
   archived: Scalars['Boolean'],
   createdAt: Scalars['DateTime'],
   modifiedAt: Scalars['DateTime'],
@@ -131,7 +132,6 @@ export type Workspace = {
   id: Scalars['ID'],
   name?: Maybe<Scalars['String']>,
   projects: ProjectConnection,
-  tasks: TaskConnection,
 };
 
 
@@ -139,12 +139,6 @@ export type WorkspaceProjectsArgs = {
   first?: Maybe<Scalars['Int']>,
   after?: Maybe<Scalars['String']>,
   archived?: Maybe<Scalars['Boolean']>
-};
-
-
-export type WorkspaceTasksArgs = {
-  first?: Maybe<Scalars['Int']>,
-  after?: Maybe<Scalars['String']>
 };
 
 export type WorkspaceConnection = {

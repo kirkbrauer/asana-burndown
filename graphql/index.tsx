@@ -39,6 +39,7 @@ export type Project = {
   description?: Maybe<Scalars['String']>,
   color?: Maybe<Scalars['String']>,
   status?: Maybe<ProjectStatus>,
+  url?: Maybe<Scalars['URL']>,
   archived: Scalars['Boolean'],
   createdAt: Scalars['DateTime'],
   modifiedAt: Scalars['DateTime'],
@@ -134,7 +135,6 @@ export type Workspace = {
   id: Scalars['ID'],
   name?: Maybe<Scalars['String']>,
   projects: ProjectConnection,
-  tasks: TaskConnection,
 };
 
 
@@ -144,17 +144,48 @@ export type WorkspaceprojectsArgs = {
   archived?: Maybe<Scalars['Boolean']>
 };
 
-
-export type WorkspacetasksArgs = {
-  first?: Maybe<Scalars['Int']>,
-  after?: Maybe<Scalars['String']>
-};
-
 export type WorkspaceConnection = {
    __typename?: 'WorkspaceConnection',
   nodes?: Maybe<Array<Maybe<Workspace>>>,
   nextPage?: Maybe<Scalars['String']>,
 };
+
+export type ProjectQueryVariables = {
+  id: Scalars['ID']
+};
+
+
+export type ProjectQuery = (
+  { __typename?: 'Query' }
+  & { project: Maybe<(
+    { __typename?: 'Project' }
+    & ProjectFragment
+  )> }
+);
+
+export type ProjectsQueryVariables = {
+  workspaceId: Scalars['ID'],
+  first?: Maybe<Scalars['Int']>,
+  after?: Maybe<Scalars['String']>,
+  archived?: Maybe<Scalars['Boolean']>
+};
+
+
+export type ProjectsQuery = (
+  { __typename?: 'Query' }
+  & { workspace: Maybe<(
+    { __typename?: 'Workspace' }
+    & Pick<Workspace, 'id'>
+    & { projects: (
+      { __typename?: 'ProjectConnection' }
+      & Pick<ProjectConnection, 'nextPage'>
+      & { nodes: Maybe<Array<Maybe<(
+        { __typename?: 'Project' }
+        & ProjectFragment
+      )>>> }
+    ) }
+  )> }
+);
 
 export type ViewerQueryVariables = {};
 
@@ -198,17 +229,119 @@ export type WorkspacesQuery = (
   )> }
 );
 
+export type ProjectFragment = (
+  { __typename?: 'Project' }
+  & Pick<Project, 'id' | 'name' | 'description' | 'color' | 'archived' | 'createdAt' | 'modifiedAt' | 'dueOn' | 'startOn' | 'url'>
+  & { status: Maybe<(
+    { __typename?: 'ProjectStatus' }
+    & Pick<ProjectStatus, 'text' | 'color'>
+  )> }
+);
+
 export type WorkspaceFragment = (
   { __typename?: 'Workspace' }
   & Pick<Workspace, 'id' | 'name'>
 );
 
+export const ProjectFragmentDoc = gql`
+    fragment Project on Project {
+  id
+  name
+  description
+  color
+  archived
+  createdAt
+  modifiedAt
+  dueOn
+  startOn
+  url
+  status {
+    text
+    color
+  }
+}
+    `;
 export const WorkspaceFragmentDoc = gql`
     fragment Workspace on Workspace {
   id
   name
 }
     `;
+export const ProjectDocument = gql`
+    query Project($id: ID!) {
+  project(id: $id) {
+    ...Project
+  }
+}
+    ${ProjectFragmentDoc}`;
+
+/**
+ * __useProjectQuery__
+ *
+ * To run a query within a React component, call `useProjectQuery` and pass it any options that fit your needs.
+ * When your component renders, `useProjectQuery` returns an object from Apollo Client that contains loading, error, and data properties 
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useProjectQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useProjectQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<ProjectQuery, ProjectQueryVariables>) {
+        return ApolloReactHooks.useQuery<ProjectQuery, ProjectQueryVariables>(ProjectDocument, baseOptions);
+      }
+export function useProjectLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<ProjectQuery, ProjectQueryVariables>) {
+          return ApolloReactHooks.useLazyQuery<ProjectQuery, ProjectQueryVariables>(ProjectDocument, baseOptions);
+        }
+export type ProjectQueryHookResult = ReturnType<typeof useProjectQuery>;
+export type ProjectLazyQueryHookResult = ReturnType<typeof useProjectLazyQuery>;
+export type ProjectQueryResult = ApolloReactCommon.QueryResult<ProjectQuery, ProjectQueryVariables>;
+export const ProjectsDocument = gql`
+    query Projects($workspaceId: ID!, $first: Int, $after: String, $archived: Boolean) {
+  workspace(id: $workspaceId) {
+    id
+    projects(first: $first, after: $after, archived: $archived) {
+      nodes {
+        ...Project
+      }
+      nextPage
+    }
+  }
+}
+    ${ProjectFragmentDoc}`;
+
+/**
+ * __useProjectsQuery__
+ *
+ * To run a query within a React component, call `useProjectsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useProjectsQuery` returns an object from Apollo Client that contains loading, error, and data properties 
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useProjectsQuery({
+ *   variables: {
+ *      workspaceId: // value for 'workspaceId'
+ *      first: // value for 'first'
+ *      after: // value for 'after'
+ *      archived: // value for 'archived'
+ *   },
+ * });
+ */
+export function useProjectsQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<ProjectsQuery, ProjectsQueryVariables>) {
+        return ApolloReactHooks.useQuery<ProjectsQuery, ProjectsQueryVariables>(ProjectsDocument, baseOptions);
+      }
+export function useProjectsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<ProjectsQuery, ProjectsQueryVariables>) {
+          return ApolloReactHooks.useLazyQuery<ProjectsQuery, ProjectsQueryVariables>(ProjectsDocument, baseOptions);
+        }
+export type ProjectsQueryHookResult = ReturnType<typeof useProjectsQuery>;
+export type ProjectsLazyQueryHookResult = ReturnType<typeof useProjectsLazyQuery>;
+export type ProjectsQueryResult = ApolloReactCommon.QueryResult<ProjectsQuery, ProjectsQueryVariables>;
 export const ViewerDocument = gql`
     query Viewer {
   viewer {

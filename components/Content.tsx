@@ -1,25 +1,30 @@
-import React, { FunctionComponent } from 'react';
+import React, { FunctionComponent, forwardRef, Ref } from 'react';
 import { makeStyles, createStyles, Theme } from '@material-ui/core';
 
-const useStyles = makeStyles((theme: Theme) =>
+type ContentProps = {
+  disablePadding?: boolean,
+  ref?: Ref<HTMLDivElement>
+};
+
+const useStyles = makeStyles<Theme, ContentProps>((theme: Theme) =>
   createStyles({
     toolbar: theme.mixins.toolbar,
-    content: {
+    content: ({ disablePadding }) => ({
       flexGrow: 1,
-      padding: theme.spacing(3),
+      padding: !disablePadding ? theme.spacing(3) : undefined,
       backgroundColor: theme.palette.background.default
-    }
+    })
   })
 );
 
-const Content: FunctionComponent = ({ children }) => {
-  const classes = useStyles({});
+const Content: FunctionComponent<ContentProps> = forwardRef<HTMLDivElement, ContentProps>(({ children, disablePadding }, ref) => {
+  const classes = useStyles({ disablePadding });
   return (
-    <div className={classes.content}>
+    <div className={classes.content} ref={ref}>
       <div className={classes.toolbar}/>
       {children}
     </div>
   );
-};
+});
 
 export default Content;

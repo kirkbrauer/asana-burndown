@@ -1623,6 +1623,13 @@
   dependencies:
     "@types/node" "*"
 
+"@types/moment@^2.13.0":
+  version "2.13.0"
+  resolved "https://registry.yarnpkg.com/@types/moment/-/moment-2.13.0.tgz#604ebd189bc3bc34a1548689404e61a2a4aac896"
+  integrity sha1-YE69GJvDvDShVIaJQE5hoqSqyJY=
+  dependencies:
+    moment "*"
+
 "@types/node@*", "@types/node@>=6", "@types/node@^12.12.12":
   version "12.12.12"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-12.12.12.tgz#529bc3e73dbb35dd9e90b0a1c83606a9d3264bdb"
@@ -6327,6 +6334,11 @@ mkdirp@0.5.1, mkdirp@^0.5.0, mkdirp@^0.5.1:
   dependencies:
     minimist "0.0.8"
 
+moment@*, moment@^2.24.0:
+  version "2.24.0"
+  resolved "https://registry.yarnpkg.com/moment/-/moment-2.24.0.tgz#0d055d53f5052aa653c9f6eb68bb5d12bf5c2b5b"
+  integrity sha512-bV7f+6l2QigeBBZSM/6yTNq4P2fNpSWj/0e7jQcy87A8e7o2nAfP/34/2ky5Vw4B9S446EtIhodAzkFCcR4dQg==
+
 move-concurrently@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/move-concurrently/-/move-concurrently-1.0.1.tgz#be2c005fda32e0b29af1f05d7c4b33214c701f92"
@@ -7926,6 +7938,11 @@ react-is@^16.7.0, react-is@^16.8.1, react-is@^16.8.6:
   version "16.12.0"
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-16.12.0.tgz#2cc0fe0fba742d97fd527c42a13bec4eeb06241c"
   integrity sha512-rPCkf/mWBtKc97aLL9/txD8DZdemK0vkA3JMLShjlJB3Pj3s+lpf1KaBzMfQrAmhMQB0n1cU/SUGgKKBCe837Q==
+
+react-moment@^0.9.6:
+  version "0.9.6"
+  resolved "https://registry.yarnpkg.com/react-moment/-/react-moment-0.9.6.tgz#6b359a48205a52196408303e30bc982cd46d0bee"
+  integrity sha512-GAnd5NRIpGjDqLoGahJCkiCEQS1d8+dIZbIfPuy/eQ0O5Rio43fEkj5G+qrKbZCQY55fiNafpHpuirVIHqPoSg==
 
 react-transition-group@^4.3.0:
   version "4.3.0"

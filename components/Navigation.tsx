@@ -7,18 +7,27 @@ import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import Avatar from '@material-ui/core/Avatar';
 import Hidden from '@material-ui/core/Hidden';
+import Paper from '@material-ui/core/Paper';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
+import ListItemText from '@material-ui/core/ListItemText';
+import ListItemIcon from '@material-ui/core/ListItemIcon';
 import MenuIcon from '@material-ui/icons/Menu';
 import IconButton from '@material-ui/core/IconButton';
 import Divider from '@material-ui/core/Divider';
 import Drawer from '@material-ui/core/Drawer';
 import Button from '@material-ui/core/Button';
+import BottomNavigation from '@material-ui/core/BottomNavigation';
+import BottomNavigationAction from '@material-ui/core/BottomNavigationAction';
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import AccountCircleIcon from '@material-ui/icons/AccountCircle';
 import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 import Brightness4Icon from '@material-ui/icons/Brightness4';
 import Brightness7Icon from '@material-ui/icons/Brightness7';
+import HomeIcon from '@material-ui/icons/Home';
+import HistoryIcon from '@material-ui/icons/History';
+import TrendingDownIcon from '@material-ui/icons/TrendingDown';
+import InsertChartOutlinedIcon from '@material-ui/icons/InsertChartOutlined';
 import { useAppContext } from '../lib/context';
 import { useViewer, useCurrentWorkspace } from '../lib/hooks';
 import WorkspaceSelector from './WorkspaceSelector';
@@ -102,6 +111,9 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     userMenuIcon: {
       marginRight: theme.spacing(1)
+    },
+    drawerItemActive: {
+      color: theme.palette.primary.main
     }
   })
 );
@@ -182,14 +194,37 @@ const Navigation: FunctionComponent = ({ children }) => {
       </div>
       <Divider />
       <List>
-        <ListItem button>
-          All Projects
+        <ListItem button className={classes.drawerItemActive}>
+          <ListItemIcon className={classes.drawerItemActive}>
+            <HomeIcon/>
+          </ListItemIcon>
+          <ListItemText>
+            All Projects
+          </ListItemText>
         </ListItem>
-        <ListItem button >
-          Recent Projects
+        <ListItem button>
+          <ListItemIcon>
+            <HistoryIcon/>
+          </ListItemIcon>
+          <ListItemText>
+            Recent Projects
+          </ListItemText>
         </ListItem>
         <ListItem button>
-          Recent Burndowns
+          <ListItemIcon>
+            <TrendingDownIcon/>
+          </ListItemIcon>
+          <ListItemText>
+            Burndowns
+          </ListItemText>
+        </ListItem>
+        <ListItem button>
+          <ListItemIcon>
+            <InsertChartOutlinedIcon/>
+          </ListItemIcon>
+          <ListItemText>
+            Reports
+          </ListItemText>
         </ListItem>
       </List>
     </div>
@@ -199,15 +234,6 @@ const Navigation: FunctionComponent = ({ children }) => {
     <div className={classes.root}>
       <AppBar position="fixed" className={classes.appBar}>
         <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
-            onClick={handleDrawerToggle}
-            className={classes.menuButton}
-          >
-            <MenuIcon />
-          </IconButton>
           <Typography variant="h6" noWrap>
             Asana Burndown
           </Typography>
@@ -218,7 +244,13 @@ const Navigation: FunctionComponent = ({ children }) => {
           }}>
             {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
           </IconButton>
-          <Button color="inherit" onClick={() => setWorkspaceSelectorOpen(true)}>{loadingWorkspace && !workspaceError ? 'Loading...' : workspace.name}</Button>
+          {workspace && (
+            <Button
+              color="inherit"
+              onClick={() => setWorkspaceSelectorOpen(true)}>
+              {loadingWorkspace && !workspaceError ? 'Loading...' : workspace.name}
+            </Button>
+          )}
           <WorkspaceSelector open={workspaceSelectorOpen} onClose={() => setWorkspaceSelectorOpen(false)} />
         </Toolbar>
       </AppBar>
@@ -238,6 +270,14 @@ const Navigation: FunctionComponent = ({ children }) => {
           >
             {drawer}
           </Drawer>
+          <Paper style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10 }} elevation={4}>
+            <BottomNavigation value="projects" showLabels>
+              <BottomNavigationAction value="projects" label="Projects" icon={<HomeIcon/>}/>
+              <BottomNavigationAction value="recents" label="Recents" icon={<HistoryIcon/>}/>
+              <BottomNavigationAction value="burndowns" label="Burndowns" icon={<TrendingDownIcon/>}/>
+              <BottomNavigationAction value="reports" label="Reports" icon={<InsertChartOutlinedIcon/>}/>
+            </BottomNavigation>
+          </Paper>
         </Hidden>
         <Hidden xsDown implementation="css">
           <Drawer

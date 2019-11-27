@@ -65,26 +65,6 @@ const resolvers: IResolvers<{}, ContextType> = {
     id(workspace: Workspace) {
       return encodeId(workspace.id, 'Workspace');
     },
-    async tasks(workspace: Workspace, { first, after }, { client }) {
-      // Decode the cursor
-      let offset = undefined;
-      if (after) {
-        offset = decodeId(after, 'C/Task');
-      }
-      // Load the taks
-      const taskData = await client.tasks.findAll({
-        offset,
-        workspace: parseInt(workspace.id, 10),
-        limit: first || 10,
-        opt_fields: 'name,created_at,completed_at,completed,due_on,parent,custom_fields'
-      });
-      const tasks = taskData.data.map(task => convertTask(task));
-      // Return the data
-      return {
-        nodes: tasks,
-        nextPage: taskData._response.next_page ? encodeId(taskData._response.next_page.offset, 'C/Task') : undefined
-      };
-    },
     async projects(workspace: Workspace, { first, after, archived }, { client }) {
       // Decode the cursor
       let offset = undefined;
@@ -110,6 +90,9 @@ const resolvers: IResolvers<{}, ContextType> = {
   Project: {
     id(project: Project) {
       return encodeId(project.id, 'Project');
+    },
+    url(project: Project) {
+      return `https://app.asana.com/0/${project.id}`;
     },
     async tasks(project: Project, { first, after }, { client }) {
       // Decode the cursor

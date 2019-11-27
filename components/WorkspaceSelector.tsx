@@ -23,7 +23,7 @@ const WorkspaceSelector: FunctionComponent<WorkspaceSelectorProps> = ({ open, on
 
   const openWorkspace = (id: string) => {
     setWorkspaceId(id);
-    router.push('/projects', `/w/${id}/projects`, { query: { workspaceId: id } });
+    router.push('/projects', `/w/${id}`, { query: { workspaceId: id } });
   };
 
   return (

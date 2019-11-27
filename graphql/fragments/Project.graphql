@@ -1,0 +1,16 @@
+fragment Project on Project {
+  id
+  name
+  description
+  color
+  archived
+  createdAt
+  modifiedAt
+  dueOn
+  startOn
+  url
+  status {
+    text
+    color
+  }
+}

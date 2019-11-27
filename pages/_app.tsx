@@ -32,11 +32,29 @@ class MyApp extends App<AppProps, {}, AppState> {
     };
   }
 
+  private setDarkMode(enabled: boolean) {
+    // Switch the app theme
+    this.setState({ darkMode: enabled });
+    // Update the user preferences
+    Cookies.set('darkMode', String(enabled));
+  }
+
+  private setWorkspaceId(id: string) {
+    // Update the app workspace ID
+    this.setState({ workspaceId: id });
+    // Update the recent workspace ID in cookies
+    Cookies.set('workspaceId', id);
+  }
+
   componentDidMount() {
     // Remove the server-side injected CSS.
     const jssStyles = document.querySelector('#jss-server-side');
     if (jssStyles) {
       jssStyles.parentElement.removeChild(jssStyles);
+    }
+    // Check if the system dark mode is enabled
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      this.setDarkMode(true);
     }
   }
 
@@ -54,18 +72,8 @@ class MyApp extends App<AppProps, {}, AppState> {
             <AppContextProvider value={{
               workspaceId,
               darkMode,
-              setWorkspaceId: (id) => {
-                // Update the app workspace ID
-                this.setState({ workspaceId: id });
-                // Update the recent workspace ID in cookies
-                Cookies.set('workspaceId', id);
-              },
-              setDarkMode: (enabled) => {
-                // Switch the app theme
-                this.setState({ darkMode: enabled });
-                // Update the user preferences
-                Cookies.set('darkMode', String(enabled));
-              }
+              setWorkspaceId: id => this.setWorkspaceId(id),
+              setDarkMode: enabled => this.setDarkMode(enabled)
             }}>
               <ApolloProvider client={apollo}>
                 <Component {...pageProps} />

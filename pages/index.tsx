@@ -12,7 +12,7 @@ const Home = () => {
   useEffect(() => {
     if (workspaceId) {
       setWorkspaceId(workspaceId);
-      router.push('/projects', `/w/${workspaceId}/projects`, { query: { workspaceId } });
+      router.push('/projects', `/w/${workspaceId}`, { query: { workspaceId } });
     }
   }, [workspaceId]);
 

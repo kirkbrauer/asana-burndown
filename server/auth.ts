@@ -1,10 +1,18 @@
 import passport from 'passport';
-import { Express } from 'express';
+import { Express, Request, Response, NextFunction } from 'express';
 import { Strategy as AsanaStrategy } from 'passport-asana';
 import User from './entities/User';
 import { connection } from './db';
 import refresh from 'passport-oauth2-refresh';
 import redisClient from './redis';
+
+export function checkAuth(req: Request, res: Response, next: NextFunction) {
+  if (!req.user) {
+    res.redirect('/login');
+  } else {
+    next();
+  }
+}
 
 export default function configurePassport(server: Express) {
   // Configure passport asana strategy
