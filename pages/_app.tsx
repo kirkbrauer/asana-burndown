@@ -10,12 +10,11 @@ import { ApolloProvider } from '@apollo/react-hooks';
 import { RouterProvider } from 'use-next-route';
 import { AppContextProvider } from '../lib/context';
 import Cookies from 'js-cookie';
-import cookie from 'cookie';
+import Navigation from '../components/Navigation';
 
 type AppProps = {
   apollo: ApolloClient<any>
-  darkMode: boolean,
-  workspaceId: string
+  darkMode: boolean
 };
 
 type AppState = {
@@ -27,7 +26,7 @@ class MyApp extends App<AppProps, {}, AppState> {
   constructor(props: any) {
     super(props);
     this.state = {
-      workspaceId: props.router.query.workspaceId || props.workspaceId,
+      workspaceId: props.router.query.workspaceId,
       darkMode: props.darkMode
     };
   }
@@ -55,12 +54,27 @@ class MyApp extends App<AppProps, {}, AppState> {
     // Check if the system dark mode is enabled
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       this.setDarkMode(true);
+    } else {
+      this.setDarkMode(false);
     }
   }
 
   render() {
     const { Component, pageProps, apollo, router } = this.props;
     const { workspaceId, darkMode } = this.state;
+    let appContent;
+    if (router.route !== '/login') {
+      // Only wrap app components with navigation
+      appContent = (
+        <Navigation>
+          <Component {...pageProps} />
+        </Navigation>
+      );
+    } else {
+      appContent = (
+        <Component {...pageProps} />
+      );
+    }
     return (
       <React.Fragment>
         <Head>
@@ -76,7 +90,7 @@ class MyApp extends App<AppProps, {}, AppState> {
               setDarkMode: enabled => this.setDarkMode(enabled)
             }}>
               <ApolloProvider client={apollo}>
-                <Component {...pageProps} />
+                {appContent}
               </ApolloProvider>
             </AppContextProvider>
           </RouterProvider>
@@ -91,8 +105,7 @@ MyApp.getInitialProps = async ({ ctx }) => {
     const cookies = (ctx.req as any).cookies;
     return {
       pageProps: {},
-      darkMode: cookies.darkMode === 'true',
-      workspaceId: cookies.workspaceId
+      darkMode: cookies.darkMode === 'true'
     };
   }
 };

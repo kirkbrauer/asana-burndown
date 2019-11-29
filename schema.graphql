@@ -4,7 +4,7 @@ scalar Date
 scalar URL
 
 type PageInfo {
-  offset: String
+  nextPage: String
   hasNextPage: Boolean!
 }
 
@@ -16,7 +16,7 @@ type Workspace {
 
 type WorkspaceConnection {
   nodes: [Workspace]
-  nextPage: String
+  pageInfo: PageInfo
 }
 
 type ProjectStatus {
@@ -42,7 +42,7 @@ type Project {
   
 type ProjectConnection {
   nodes: [Project]
-  nextPage: String
+  pageInfo: PageInfo
 }
 
 type Task {
@@ -59,7 +59,7 @@ type Task {
 
 type TaskConnection {
   nodes: [Task]
-  nextPage: String
+  pageInfo: PageInfo
 }
 
 enum PhotoSize {

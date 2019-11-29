@@ -31,6 +31,7 @@ import InsertChartOutlinedIcon from '@material-ui/icons/InsertChartOutlined';
 import { useAppContext } from '../lib/context';
 import { useViewer, useCurrentWorkspace } from '../lib/hooks';
 import WorkspaceSelector from './WorkspaceSelector';
+import { useRouter } from 'next/router';
 
 const drawerWidth = 260;
 
@@ -120,12 +121,12 @@ const useStyles = makeStyles((theme: Theme) =>
 
 const Navigation: FunctionComponent = ({ children }) => {
   const classes = useStyles({});
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuAnchorEl, setUserMenuAnchorEl] = useState(null);
   const { viewer, loading: loadingViewer } = useViewer();
   const [workspaceSelectorOpen, setWorkspaceSelectorOpen] = useState(false);
   const { workspace, loading: loadingWorkspace, error: workspaceError } = useCurrentWorkspace();
-  const { darkMode, setDarkMode } = useAppContext();
 
   const handleUserMenuClick = (e: MouseEvent) => {
     setUserMenuAnchorEl(e.currentTarget);
@@ -138,6 +139,33 @@ const Navigation: FunctionComponent = ({ children }) => {
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
+
+  const routes = [
+    {
+      route: '/w/[workspaceId]',
+      path: '',
+      name: 'Projects',
+      icon: <HomeIcon/>
+    },
+    {
+      route: '/w/[workspaceId]/recent',
+      path: '/recent',
+      name: 'Recent',
+      icon: <HistoryIcon/>
+    },
+    {
+      route: '/w/[workspaceId]/burndowns',
+      path: '/burndowns',
+      name: 'Burndowns',
+      icon: <TrendingDownIcon/>
+    },
+    {
+      route: '/w/[workspaceId]/reports',
+      path: '/reports',
+      name: 'Reports',
+      icon: <InsertChartOutlinedIcon/>
+    }
+  ];
 
   let userInfo;
   if (viewer) {
@@ -194,38 +222,23 @@ const Navigation: FunctionComponent = ({ children }) => {
       </div>
       <Divider />
       <List>
-        <ListItem button className={classes.drawerItemActive}>
-          <ListItemIcon className={classes.drawerItemActive}>
-            <HomeIcon/>
-          </ListItemIcon>
-          <ListItemText>
-            All Projects
-          </ListItemText>
-        </ListItem>
-        <ListItem button>
-          <ListItemIcon>
-            <HistoryIcon/>
-          </ListItemIcon>
-          <ListItemText>
-            Recent Projects
-          </ListItemText>
-        </ListItem>
-        <ListItem button>
-          <ListItemIcon>
-            <TrendingDownIcon/>
-          </ListItemIcon>
-          <ListItemText>
-            Burndowns
-          </ListItemText>
-        </ListItem>
-        <ListItem button>
-          <ListItemIcon>
-            <InsertChartOutlinedIcon/>
-          </ListItemIcon>
-          <ListItemText>
-            Reports
-          </ListItemText>
-        </ListItem>
+        {routes.map(route => (
+          <ListItem 
+            button 
+            key={route.route}
+            className={route.route === router.route ? classes.drawerItemActive : undefined}
+            onClick={() => {
+              router.push(route.route, `/w/${workspace.id}${route.path}`);
+            }}
+          >
+            <ListItemIcon className={route.route === router.route ? classes.drawerItemActive : undefined}>
+              {route.icon}
+            </ListItemIcon>
+            <ListItemText>
+              {route.name}
+            </ListItemText>
+          </ListItem>
+        ))}
       </List>
     </div>
   );
@@ -238,12 +251,6 @@ const Navigation: FunctionComponent = ({ children }) => {
             Asana Burndown
           </Typography>
           <span style={{ flex: 1 }} />
-          <IconButton color="inherit" onClick={() => {
-            // Toggle dark mode
-            setDarkMode(!darkMode);
-          }}>
-            {darkMode ? <Brightness7Icon /> : <Brightness4Icon />}
-          </IconButton>
           {workspace && (
             <Button
               color="inherit"
@@ -271,11 +278,21 @@ const Navigation: FunctionComponent = ({ children }) => {
             {drawer}
           </Drawer>
           <Paper style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 10 }} elevation={4}>
-            <BottomNavigation value="projects" showLabels>
-              <BottomNavigationAction value="projects" label="Projects" icon={<HomeIcon/>}/>
-              <BottomNavigationAction value="recents" label="Recents" icon={<HistoryIcon/>}/>
-              <BottomNavigationAction value="burndowns" label="Burndowns" icon={<TrendingDownIcon/>}/>
-              <BottomNavigationAction value="reports" label="Reports" icon={<InsertChartOutlinedIcon/>}/>
+            <BottomNavigation 
+              value={router.route} 
+              showLabels
+              onChange={(e, route) => {
+                router.push(route, `/w/${workspace.id}${routes.find(r => r.route === route).path}`);
+              }}
+            >
+              {routes.map(route => (
+                <BottomNavigationAction
+                  key={`bottom-${route.route}`}
+                  value={route.route}
+                  label={route.name}
+                  icon={route.icon}
+                />
+              ))}
             </BottomNavigation>
           </Paper>
         </Hidden>

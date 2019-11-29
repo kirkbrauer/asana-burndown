@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { useViewerQuery, User, useWorkspacesQuery, useWorkspaceQuery, WorkspaceFragment, useProjectsQuery, ProjectFragment, useProjectQuery } from '../graphql';
+import { useViewerQuery, User, useWorkspacesQuery, useWorkspaceQuery, WorkspaceFragment, useProjectsQuery, ProjectFragment, useProjectQuery, PageInfo, ProjectsDocument, ProjectsQuery, ProjectsQueryVariables, ProjectsQueryResult } from '../graphql';
 import { useAppContext } from './context';
+import { useApolloClient } from '@apollo/react-hooks';
 
 export const useViewer = () => {
   const { data, loading, error } = useViewerQuery();
@@ -28,7 +29,7 @@ export const useWorkspaces = () => {
 
 export const useCurrentWorkspace = () => {
   const { workspaceId } = useAppContext();
-  const { data, loading, error } = useWorkspaceQuery({ variables: { id: workspaceId } });
+  const { data, loading, error } = useWorkspaceQuery({ variables: { id: workspaceId }, skip: !workspaceId });
   let workspace: WorkspaceFragment;
   if (data) {
     if (data.workspace) {
@@ -45,68 +46,66 @@ type UseProjectsOptions = {
 };
 
 export const useProjects = (workspaceId: string, options?: UseProjectsOptions) => {
-  // Loading state hooks
-  const [loadingMore, setLoadingMore] = useState(false);
   // Use projects query hook
-  const { data, loading, error, fetchMore } = useProjectsQuery({ 
+  const { data, loading, error, fetchMore: fetchMoreFn, refetch: refetchFn } = useProjectsQuery({ 
     variables: {
       workspaceId,
-      first: options ? options.first : undefined,
-      after: options ? options.after : undefined,
-      archived: options ? options.archived : undefined,
+      ...options
     }
   });
+  const client = useApolloClient();
+  const [fetchingMore, setFetchingMore] = useState(false);
+  const [refetching, setRefetching] = useState(false);
   // Check if data was loaded
   let projects: ProjectFragment[] = [];
-  let nextPageToken: string;
+  let pageInfo: PageInfo = null;
+  let hasNextPage = false;
   if (data) {
     if (data.workspace) {
       if (data.workspace.projects) {
         projects = data.workspace.projects.nodes;
-        if (data.workspace.projects.nextPage) {
-          nextPageToken = data.workspace.projects.nextPage;
-        }
+        pageInfo = data.workspace.projects.pageInfo;
+        hasNextPage = pageInfo.hasNextPage;
       }
     }
   }
-  // Setup state hooks
-  const [hasNextPage, setHasNextPage] = useState(Boolean(nextPageToken));
   // Load more function
-  const loadMore = () => {
-    // Only load more if there is another page
-    if (nextPageToken) {
-      // Set loading more
-      setLoadingMore(true);
-      // Call apollo fetchMore function
-      return fetchMore({
-        variables: {
-          after: nextPageToken
-        },
-        updateQuery: (previousResult, { fetchMoreResult }) => {
-          // Set loading more
-          setLoadingMore(false);
+  const fetchMore = async () => {
+    setFetchingMore(true);
+    return fetchMoreFn({
+      variables: {
+        workspaceId,
+        ...options,
+        after: pageInfo.nextPage
+      },
+      updateQuery: (previousResult, { fetchMoreResult }) => {
+        if (fetchMoreResult) {
           // Extract the data
           const previousProjects = previousResult.workspace.projects.nodes;
           const newProjects = fetchMoreResult.workspace.projects.nodes;
-          nextPageToken = fetchMoreResult.workspace.projects.nextPage;
-          setHasNextPage(Boolean(nextPageToken));
+          const pageInfo = fetchMoreResult.workspace.projects.pageInfo;
+          // Merge the new data with the old data
           return {
             ...previousResult,
             workspace: {
               ...previousResult.workspace,
               projects: {
                 ...previousResult.workspace.projects,
-                nodes: [...previousProjects, ...newProjects],
-                nextPage: fetchMoreResult.workspace.projects.nextPage
+                pageInfo,
+                nodes: [...previousProjects, ...newProjects]
               }
             }
           };
         }
-      });
-    }
-    return new Promise(() => {});
+        return previousResult;
+      }
+    }).then(() => setFetchingMore(false));
   };
-  return { projects, loading, error, hasNextPage, loadMore, loadingMore };
+  const refetch = async () => {
+    setRefetching(true);
+    return refetchFn({ workspaceId, ...options }).then(() => setRefetching(false));
+  };
+  return { projects, loading, error, hasNextPage, fetchMore, fetchingMore, refetch, refetching };
 };
 
 export const useProject = (id: string) => {
@@ -115,7 +114,7 @@ export const useProject = (id: string) => {
       id
     }
   });
-  let project: ProjectFragment = null;
+  let project: ProjectFragment & { workspace: WorkspaceFragment } = null;
   if (data) {
     if (data.project) {
       project = data.project;

@@ -12,9 +12,15 @@ import SlideshowOutlinedIcon from '@material-ui/icons/SlideshowOutlined';
 import LaunchIcon from '@material-ui/icons/Launch';
 import Typography from '@material-ui/core/Typography';
 import { ProjectFragment } from '../graphql';
+import CardActionArea from '@material-ui/core/CardActionArea';
 
 type ProjectCardProps = {
-  project: ProjectFragment
+  project: ProjectFragment,
+  onClick?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void,
+  onClickPresent?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void,
+  onClickReport?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void,
+  onClickBurndown?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void,
+  onClickOpenInAsana?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void
 };
 
 const getColor = (name: string) => {
@@ -57,53 +63,63 @@ const getColor = (name: string) => {
 const useStyles = makeStyles<Theme, { projectColor: string }>((theme: Theme) =>
   createStyles({
     projectCard: {
-      display: 'flex',
-      flexDirection: 'column',
-      height: 200
+      height: 200,
+      position: 'relative'
     },
     projectCardContent: {
-      flex: 1
+      position: 'absolute',
+      top: theme.spacing(2)
+    },
+    projectCardActionArea: {
+      position: 'absolute',
+      top: 0,
+      height: '100%'
+    },
+    projectCardActions: {
+      position: 'absolute',
+      width: '100%',
+      bottom: 0,
+      right: 0,
+      left: 0,
+      justifyContent: 'space-between'
     },
     projectColor: ({ projectColor }) => ({
       width: '100%',
-      height: 16,
+      height: theme.spacing(2),
       backgroundColor: getColor(projectColor)
     })
   })
 );
 
-const ProjectCard: FunctionComponent<ProjectCardProps> = ({ project }) => {
+const ProjectCard: FunctionComponent<ProjectCardProps> = ({ project, onClick, onClickPresent, onClickReport, onClickBurndown, onClickOpenInAsana }) => {
   const classes = useStyles({ projectColor: project.color });
-
-  const openInAsana = () => {
-    window.open(project.url, '_blank');
-  };
-
   return (
     <Card className={classes.projectCard}>
       <div className={classes.projectColor} />
-      <CardContent className={classes.projectCardContent}>
-        <Typography variant="h6">{project.name}</Typography>
-        <Typography variant="caption"><Moment date={project.modifiedAt} fromNow/></Typography>
-      </CardContent>
-      <CardActions style={{ justifyContent: 'space-between' }}>
+      <CardActionArea className={classes.projectCardActionArea} onClick={onClick}>
+        <CardContent className={classes.projectCardContent}>
+          <Typography variant="h6">{project.name}</Typography>
+          <Typography variant="caption"><Moment date={project.modifiedAt} fromNow/></Typography>
+        </CardContent>
+      </CardActionArea>
+      <CardActions className={classes.projectCardActions}>
         <Tooltip title="Present" aria-label="present" placement="top">
-          <IconButton>
+          <IconButton onClick={onClickPresent}>
             <SlideshowOutlinedIcon/>
           </IconButton>
         </Tooltip>
         <Tooltip title="Generate Report" aria-label="report" placement="top">
-          <IconButton>
+          <IconButton onClick={onClickReport}>
             <AssessmentOutlinedIcon/>
           </IconButton>
         </Tooltip>
         <Tooltip title="View Burndown" aria-label="burndown" placement="top">
-          <IconButton>
+          <IconButton onClick={onClickBurndown}>
             <TrendingDownIcon/>
           </IconButton>
         </Tooltip>
         <Tooltip title="Open in Asana" aria-label="asana" placement="top">
-          <IconButton onClick={openInAsana}>
+          <IconButton onClick={onClickOpenInAsana}>
             <LaunchIcon/>
           </IconButton>
         </Tooltip>

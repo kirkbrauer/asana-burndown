@@ -8,6 +8,7 @@ export default function configureRoutes(app: Server, server: Express) {
   const handle = app.getRequestHandler();
 
   server.get('/login', (req, res) => {
+    // Login redirect for users
     if (req.user) {
       res.redirect('/');
     } else {
@@ -22,10 +23,6 @@ export default function configureRoutes(app: Server, server: Express) {
     } else {
       app.render(req, res, '/');
     }
-  });
-
-  server.get('/w/:workspaceId', checkAuth, (req, res) => {
-    app.render(req, res, '/projects', { workspaceId: req.params.workspaceId });
   });
   
   // Handle all Next.js routes

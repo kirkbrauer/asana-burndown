@@ -1,6 +1,4 @@
 import { IResolvers } from 'graphql-tools';
-import asana from 'asana';
-import { encodeId, decodeId } from 'opaqueid';
 import User from './entities/User';
 import { ContextType } from './apollo';
 import { convertProject, convertWorkspace, convertTask, convertUser } from './asanaClient';
@@ -12,22 +10,19 @@ const resolvers: IResolvers<{}, ContextType> = {
       return convertUser(await client.users.me({ opt_fields: 'photo,email,name' }));
     },
     async workspace(obj: any, { id }, { client }) {
-      return convertWorkspace(await client.workspaces.findById(decodeId(id, 'Workspace') as number));
+      return convertWorkspace(await client.workspaces.findById(id));
     },
     async project(obj: any, { id }, { client }) {
-      const project = await client.projects.findById(decodeId(id, 'Project') as number, {
+      const project = await client.projects.findById(id, {
         opt_fields: 'name,archived,current_status,created_at,modified_at,color,notes,workspace,due_on,due_at,start_on'
       });
       return convertProject(project);
     },
     async task(obj: any, { id }, { client }) {
-      return convertTask(await client.tasks.findById(decodeId(id, 'Task') as number));
+      return convertTask(await client.tasks.findById(id));
     }
   },
   User: {
-    id(user: User) {
-      return encodeId(user.id, 'User');
-    },
     photo(user: User & { photoUrls: any }, { size }) {
       if (user.photoUrls) {
         switch (size) {
@@ -46,35 +41,25 @@ const resolvers: IResolvers<{}, ContextType> = {
       return null;
     },
     async workspaces(user: User, { first, after }, { client }) {
-      // Decode the cursor
-      let offset = undefined;
-      if (after) {
-        offset = decodeId(after, 'C/Workspace');
-      }
       // Load the workspaces
-      const workspaceData = await client.workspaces.findAll({ offset, limit: first || 10 });
+      const workspaceData = await client.workspaces.findAll({ offset: after, limit: first || 10 });
       const workspaces = workspaceData.data.map(data => convertWorkspace(data));
       // Return the data
       return {
         nodes: workspaces,
-        nextPage: workspaceData._response.next_page ? encodeId(workspaceData._response.next_page.offset, 'C/Workspace') : undefined
+        pageInfo: {
+          nextPage: workspaceData._response.next_page ? workspaceData._response.next_page.offset : undefined,
+          hasNextPage: Boolean(workspaceData._response.next_page)
+        }
       };
     }
   },
   Workspace: {
-    id(workspace: Workspace) {
-      return encodeId(workspace.id, 'Workspace');
-    },
     async projects(workspace: Workspace, { first, after, archived }, { client }) {
-      // Decode the cursor
-      let offset = undefined;
-      if (after) {
-        offset = decodeId(after, 'C/Project');
-      }
       // Load the projects
-      const projectData = await client.projects.findByWorkspace(parseInt(workspace.id, 10), { 
-        offset,
+      const projectData = await client.projects.findByWorkspace(parseInt(workspace.id, 10), {
         archived,
+        offset: after,
         limit: first || 10,
         opt_fields: 'name,archived,current_status,created_at,modified_at,color,notes,workspace,due_on,due_at,start_on'
       });
@@ -83,26 +68,21 @@ const resolvers: IResolvers<{}, ContextType> = {
       // Return the data
       return {
         nodes: projects,
-        nextPage: projectData._response.next_page ? encodeId(projectData._response.next_page.offset, 'C/Project') : undefined
+        pageInfo: {
+          nextPage: projectData._response.next_page ? projectData._response.next_page.offset : undefined,
+          hasNextPage: Boolean(projectData._response.next_page)
+        }
       };
     }
   },
   Project: {
-    id(project: Project) {
-      return encodeId(project.id, 'Project');
-    },
     url(project: Project) {
       return `https://app.asana.com/0/${project.id}`;
     },
     async tasks(project: Project, { first, after }, { client }) {
-      // Decode the cursor
-      let offset = undefined;
-      if (after) {
-        offset = decodeId(after, 'C/Task');
-      }
       // Load the taks
       const taskData = await client.tasks.findByProject(project.id, {
-        offset,
+        offset: after,
         limit: first || 10,
         opt_fields: 'name,created_at,completed_at,completed,due_on,parent,custom_fields'
       });
@@ -110,16 +90,14 @@ const resolvers: IResolvers<{}, ContextType> = {
       // Return the data
       return {
         nodes: tasks,
-        nextPage: taskData._response.next_page ? encodeId(taskData._response.next_page.offset, 'C/Task') : undefined
+        pageInfo: {
+          nextPage: taskData._response.next_page ? taskData._response.next_page.offset : undefined,
+          hasNextPage: Boolean(taskData._response.next_page)
+        }
       };
     },
     async workspace(project: Project, {}, { client }) {
       return convertWorkspace(await client.workspaces.findById(parseInt(project.workspace.id, 10)));
-    }
-  },
-  Task: {
-    id(task: Task) {
-      return encodeId(task.id, 'Task');
     }
   }
 };

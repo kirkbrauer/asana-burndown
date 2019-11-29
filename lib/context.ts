@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react';
 
 type AppContext = {
   workspaceId: string,
-  setWorkspaceId: (id: string) => void
+  setWorkspaceId: (id: string) => void,
   darkMode: boolean,
   setDarkMode: (enabled: boolean) => void
 };

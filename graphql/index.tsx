@@ -20,7 +20,7 @@ export type Scalars = {
 
 export type PageInfo = {
    __typename?: 'PageInfo',
-  offset?: Maybe<Scalars['String']>,
+  nextPage?: Maybe<Scalars['String']>,
   hasNextPage: Scalars['Boolean'],
 };
 
@@ -58,7 +58,7 @@ export type ProjecttasksArgs = {
 export type ProjectConnection = {
    __typename?: 'ProjectConnection',
   nodes?: Maybe<Array<Maybe<Project>>>,
-  nextPage?: Maybe<Scalars['String']>,
+  pageInfo?: Maybe<PageInfo>,
 };
 
 export type ProjectStatus = {
@@ -106,7 +106,7 @@ export type Task = {
 export type TaskConnection = {
    __typename?: 'TaskConnection',
   nodes?: Maybe<Array<Maybe<Task>>>,
-  nextPage?: Maybe<Scalars['String']>,
+  pageInfo?: Maybe<PageInfo>,
 };
 
 
@@ -147,7 +147,7 @@ export type WorkspaceprojectsArgs = {
 export type WorkspaceConnection = {
    __typename?: 'WorkspaceConnection',
   nodes?: Maybe<Array<Maybe<Workspace>>>,
-  nextPage?: Maybe<Scalars['String']>,
+  pageInfo?: Maybe<PageInfo>,
 };
 
 export type ProjectQueryVariables = {
@@ -159,6 +159,10 @@ export type ProjectQuery = (
   { __typename?: 'Query' }
   & { project: Maybe<(
     { __typename?: 'Project' }
+    & { workspace: (
+      { __typename?: 'Workspace' }
+      & Pick<Workspace, 'id'>
+    ) }
     & ProjectFragment
   )> }
 );
@@ -178,11 +182,13 @@ export type ProjectsQuery = (
     & Pick<Workspace, 'id'>
     & { projects: (
       { __typename?: 'ProjectConnection' }
-      & Pick<ProjectConnection, 'nextPage'>
       & { nodes: Maybe<Array<Maybe<(
         { __typename?: 'Project' }
         & ProjectFragment
-      )>>> }
+      )>>>, pageInfo: Maybe<(
+        { __typename?: 'PageInfo' }
+        & Pick<PageInfo, 'nextPage' | 'hasNextPage'>
+      )> }
     ) }
   )> }
 );
@@ -224,7 +230,10 @@ export type WorkspacesQuery = (
       & { nodes: Maybe<Array<Maybe<(
         { __typename?: 'Workspace' }
         & WorkspaceFragment
-      )>>> }
+      )>>>, pageInfo: Maybe<(
+        { __typename?: 'PageInfo' }
+        & Pick<PageInfo, 'nextPage' | 'hasNextPage'>
+      )> }
     ) }
   )> }
 );
@@ -271,6 +280,9 @@ export const ProjectDocument = gql`
     query Project($id: ID!) {
   project(id: $id) {
     ...Project
+    workspace {
+      id
+    }
   }
 }
     ${ProjectFragmentDoc}`;
@@ -308,7 +320,10 @@ export const ProjectsDocument = gql`
       nodes {
         ...Project
       }
-      nextPage
+      pageInfo {
+        nextPage
+        hasNextPage
+      }
     }
   }
 }
@@ -417,6 +432,10 @@ export const WorkspacesDocument = gql`
     workspaces {
       nodes {
         ...Workspace
+      }
+      pageInfo {
+        nextPage
+        hasNextPage
       }
     }
   }

@@ -1,5 +1,8 @@
 query Project($id: ID!) {
   project(id: $id) {
     ...Project
+    workspace {
+      id
+    }
   }
 }

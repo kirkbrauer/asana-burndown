@@ -36,7 +36,6 @@
     "moment": "^2.24.0",
     "next": "9.1.4",
     "next-with-apollo": "^4.3.0",
-    "opaqueid": "^1.1.0",
     "passport": "^0.4.0",
     "passport-asana": "^0.0.1",
     "passport-oauth2-refresh": "^1.1.0",

@@ -17,7 +17,7 @@ export type Scalars = {
 
 export type PageInfo = {
    __typename?: 'PageInfo',
-  offset?: Maybe<Scalars['String']>,
+  nextPage?: Maybe<Scalars['String']>,
   hasNextPage: Scalars['Boolean'],
 };
 
@@ -55,7 +55,7 @@ export type ProjectTasksArgs = {
 export type ProjectConnection = {
    __typename?: 'ProjectConnection',
   nodes?: Maybe<Array<Maybe<Project>>>,
-  nextPage?: Maybe<Scalars['String']>,
+  pageInfo?: Maybe<PageInfo>,
 };
 
 export type ProjectStatus = {
@@ -103,7 +103,7 @@ export type Task = {
 export type TaskConnection = {
    __typename?: 'TaskConnection',
   nodes?: Maybe<Array<Maybe<Task>>>,
-  nextPage?: Maybe<Scalars['String']>,
+  pageInfo?: Maybe<PageInfo>,
 };
 
 
@@ -144,5 +144,5 @@ export type WorkspaceProjectsArgs = {
 export type WorkspaceConnection = {
    __typename?: 'WorkspaceConnection',
   nodes?: Maybe<Array<Maybe<Workspace>>>,
-  nextPage?: Maybe<Scalars['String']>,
+  pageInfo?: Maybe<PageInfo>,
 };

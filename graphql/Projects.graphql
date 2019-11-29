@@ -5,7 +5,10 @@ query Projects($workspaceId: ID!, $first: Int, $after: String, $archived: Boolea
       nodes {
         ...Project
       }
-      nextPage
+      pageInfo {
+        nextPage
+        hasNextPage
+      }
     }
   }
 }

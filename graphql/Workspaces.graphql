@@ -5,6 +5,10 @@ query Workspaces {
       nodes {
         ...Workspace
       }
+      pageInfo {
+        nextPage
+        hasNextPage
+      }
     }
   }
 }
