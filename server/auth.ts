@@ -1,8 +1,8 @@
 import passport from 'passport';
+import { getConnection } from 'typeorm';
 import { Express, Request, Response, NextFunction } from 'express';
 import { Strategy as AsanaStrategy } from 'passport-asana';
 import User from './entities/User';
-import { connection } from './db';
 import refresh from 'passport-oauth2-refresh';
 import redisClient from './redis';
 
@@ -24,7 +24,7 @@ export default function configurePassport(server: Express) {
     },
     (accessToken: string, refreshToken: string, data, done) => {
       const profile: { gid: string; email: string; name: string; } = JSON.parse(data._raw).data;
-      connection.getRepository(User).findOne({ providerId: profile.gid }).then(async (foundUser) => {
+      getConnection().getRepository(User).findOne({ providerId: profile.gid }).then(async (foundUser) => {
         let user: User = foundUser;
         if (!user) {
           // Create a new user
@@ -35,14 +35,14 @@ export default function configurePassport(server: Express) {
           newUser.refreshToken = refreshToken;
           // Attempt to save the new user
           try {
-            user = await connection.getRepository(User).save(newUser);
+            user = await getConnection().getRepository(User).save(newUser);
           } catch (error) {
             done(error, null);
           }
         } else {
           // Update the user's refresh token
           user.refreshToken = refreshToken;
-          await connection.getRepository(User).save(user);
+          await getConnection().getRepository(User).save(user);
         }
         // Cache the user access token for one hour
         const key = `${user.id}-accessToken`;
@@ -66,7 +66,7 @@ export default function configurePassport(server: Express) {
   
   // Configure user deserialization function
   passport.deserializeUser((id: any, done) => {
-    connection.getRepository(User).findOne({ id }).then((user) => {
+    getConnection().getRepository(User).findOne({ id }).then((user) => {
       done(null, user);
     }).catch((error) => {
       done(error, null);

@@ -15,13 +15,125 @@ export type Scalars = {
   Date: Date,
 };
 
+export type AsanaPageInfo = {
+   __typename?: 'AsanaPageInfo',
+  nextPage?: Maybe<Scalars['String']>,
+  hasNextPage: Scalars['Boolean'],
+};
+
+export type Burndown = {
+   __typename?: 'Burndown',
+  id: Scalars['ID'],
+  name?: Maybe<Scalars['String']>,
+  description?: Maybe<Scalars['String']>,
+  project: Project,
+  createdAt?: Maybe<Scalars['DateTime']>,
+  modifiedAt?: Maybe<Scalars['DateTime']>,
+  tasks: BurndownTaskConnection,
+  expectedPath: Array<Maybe<BurndownPoint>>,
+  currentPath: Array<Maybe<BurndownPoint>>,
+  user: User,
+};
 
 
+export type BurndowntasksArgs = {
+  first?: Maybe<Scalars['Int']>,
+  after?: Maybe<Scalars['String']>,
+  completed?: Maybe<Scalars['Boolean']>,
+  hasPoints?: Maybe<Scalars['Boolean']>,
+  orderBy?: Maybe<TaskOrder>
+};
+
+export type BurndownConnection = {
+   __typename?: 'BurndownConnection',
+  totalCount: Scalars['Int'],
+  edges: Array<Maybe<BurndownEdge>>,
+  pageInfo: PageInfo,
+};
+
+export type BurndownEdge = {
+   __typename?: 'BurndownEdge',
+  node: Burndown,
+  cursor: Scalars['String'],
+};
+
+export enum BurndownField {
+  CREATED_AT = 'CREATED_AT',
+  MODIFIED_AT = 'MODIFIED_AT'
+}
+
+export type BurndownInput = {
+  id: Scalars['ID'],
+  name?: Maybe<Scalars['String']>,
+  description?: Maybe<Scalars['String']>,
+  projectId: Scalars['ID'],
+  tasks: Array<Maybe<TaskInput>>,
+};
+
+export type BurndownOrder = {
+  direction: OrderDirection,
+  field: BurndownField,
+};
+
+export type BurndownPoint = {
+   __typename?: 'BurndownPoint',
+  x: Scalars['Date'],
+  y: Scalars['Float'],
+};
+
+export type BurndownTaskConnection = {
+   __typename?: 'BurndownTaskConnection',
+  totalCount?: Maybe<Scalars['Int']>,
+  edges?: Maybe<Array<Maybe<TaskEdge>>>,
+  pageInfo?: Maybe<PageInfo>,
+};
+
+
+export type DateQuery = {
+  lt?: Maybe<Scalars['Date']>,
+  lte?: Maybe<Scalars['Date']>,
+  gt?: Maybe<Scalars['Date']>,
+  gte?: Maybe<Scalars['Date']>,
+  eq?: Maybe<Scalars['Date']>,
+};
+
+
+export type DateTimeQuery = {
+  lt?: Maybe<Scalars['Date']>,
+  lte?: Maybe<Scalars['DateTime']>,
+  gt?: Maybe<Scalars['Date']>,
+  gte?: Maybe<Scalars['DateTime']>,
+  eq?: Maybe<Scalars['Date']>,
+};
+
+
+export type Mutation = {
+   __typename?: 'Mutation',
+  generateBurndown: Burndown,
+  saveBurndown: Burndown,
+};
+
+
+export type MutationgenerateBurndownArgs = {
+  projectId: Scalars['ID']
+};
+
+
+export type MutationsaveBurndownArgs = {
+  burndown: BurndownInput
+};
+
+export enum OrderDirection {
+  ASC = 'ASC',
+  DESC = 'DESC'
+}
 
 export type PageInfo = {
    __typename?: 'PageInfo',
-  nextPage?: Maybe<Scalars['String']>,
+  startCursor?: Maybe<Scalars['String']>,
+  endCursor?: Maybe<Scalars['String']>,
   hasNextPage: Scalars['Boolean'],
+  hasPreviousPage: Scalars['Boolean'],
 };
 
 export enum PhotoSize {
@@ -46,6 +158,7 @@ export type Project = {
   dueOn?: Maybe<Scalars['Date']>,
   startOn?: Maybe<Scalars['Date']>,
   tasks: TaskConnection,
+  burndowns: BurndownConnection,
   workspace: Workspace,
 };
 
@@ -55,10 +168,16 @@ export type ProjecttasksArgs = {
   after?: Maybe<Scalars['String']>
 };
 
+
+export type ProjectburndownsArgs = {
+  first?: Maybe<Scalars['Int']>,
+  after?: Maybe<Scalars['String']>
+};
+
 export type ProjectConnection = {
    __typename?: 'ProjectConnection',
   nodes?: Maybe<Array<Maybe<Project>>>,
-  pageInfo?: Maybe<PageInfo>,
+  pageInfo: AsanaPageInfo,
 };
 
 export type ProjectStatus = {
@@ -93,6 +212,7 @@ export type QuerytaskArgs = {
 export type Task = {
    __typename?: 'Task',
   id: Scalars['ID'],
+  taskId: Scalars['ID'],
   name?: Maybe<Scalars['String']>,
   storyPoints?: Maybe<Scalars['Float']>,
   completed?: Maybe<Scalars['Boolean']>,
@@ -100,13 +220,46 @@ export type Task = {
   dueOn?: Maybe<Scalars['Date']>,
   createdAt?: Maybe<Scalars['DateTime']>,
   modifiedAt?: Maybe<Scalars['DateTime']>,
-  defaultPoints?: Maybe<Scalars['Boolean']>,
+  hasPoints?: Maybe<Scalars['Boolean']>,
 };
 
 export type TaskConnection = {
    __typename?: 'TaskConnection',
   nodes?: Maybe<Array<Maybe<Task>>>,
-  pageInfo?: Maybe<PageInfo>,
+  pageInfo?: Maybe<AsanaPageInfo>,
+};
+
+export type TaskEdge = {
+   __typename?: 'TaskEdge',
+  node: Task,
+  cursor: Scalars['String'],
+};
+
+export enum TaskField {
+  TASK_ID = 'TASK_ID',
+  STORY_POINTS = 'STORY_POINTS',
+  COMPLETED_AT = 'COMPLETED_AT',
+  DUE_ON = 'DUE_ON',
+  CREATED_AT = 'CREATED_AT',
+  MODIFIED_AT = 'MODIFIED_AT'
+}
+
+export type TaskInput = {
+  id: Scalars['ID'],
+  taskId: Scalars['ID'],
+  name?: Maybe<Scalars['String']>,
+  storyPoints?: Maybe<Scalars['Float']>,
+  completed?: Maybe<Scalars['Boolean']>,
+  completedAt?: Maybe<Scalars['DateTime']>,
+  createdAt: Scalars['DateTime'],
+  modifiedAt?: Maybe<Scalars['DateTime']>,
+  dueOn?: Maybe<Scalars['Date']>,
+  hasPoints?: Maybe<Scalars['Boolean']>,
+};
+
+export type TaskOrder = {
+  direction: OrderDirection,
+  field: TaskField,
 };
 
 
@@ -117,6 +270,7 @@ export type User = {
   name: Scalars['String'],
   photo?: Maybe<Scalars['URL']>,
   workspaces: WorkspaceConnection,
+  burndowns: BurndownConnection,
 };
 
 
@@ -128,6 +282,13 @@ export type UserphotoArgs = {
 export type UserworkspacesArgs = {
   first?: Maybe<Scalars['Int']>,
   after?: Maybe<Scalars['String']>
+};
+
+
+export type UserburndownsArgs = {
+  first?: Maybe<Scalars['Int']>,
+  after?: Maybe<Scalars['String']>,
+  orderBy?: Maybe<BurndownOrder>
 };
 
 export type Workspace = {
@@ -147,7 +308,7 @@ export type WorkspaceprojectsArgs = {
 export type WorkspaceConnection = {
    __typename?: 'WorkspaceConnection',
   nodes?: Maybe<Array<Maybe<Workspace>>>,
-  pageInfo?: Maybe<PageInfo>,
+  pageInfo?: Maybe<AsanaPageInfo>,
 };
 
 export type ProjectQueryVariables = {
@@ -185,10 +346,10 @@ export type ProjectsQuery = (
       & { nodes: Maybe<Array<Maybe<(
         { __typename?: 'Project' }
         & ProjectFragment
-      )>>>, pageInfo: Maybe<(
-        { __typename?: 'PageInfo' }
-        & Pick<PageInfo, 'nextPage' | 'hasNextPage'>
-      )> }
+      )>>>, pageInfo: (
+        { __typename?: 'AsanaPageInfo' }
+        & Pick<AsanaPageInfo, 'nextPage' | 'hasNextPage'>
+      ) }
     ) }
   )> }
 );
@@ -231,8 +392,8 @@ export type WorkspacesQuery = (
         { __typename?: 'Workspace' }
         & WorkspaceFragment
       )>>>, pageInfo: Maybe<(
-        { __typename?: 'PageInfo' }
-        & Pick<PageInfo, 'nextPage' | 'hasNextPage'>
+        { __typename?: 'AsanaPageInfo' }
+        & Pick<AsanaPageInfo, 'nextPage' | 'hasNextPage'>
       )> }
     ) }
   )> }

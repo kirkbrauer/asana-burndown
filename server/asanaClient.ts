@@ -70,7 +70,21 @@ export function convertProject(project: asana.resources.Projects.Type): Project 
     workspace: {
       id: project.workspace.gid,
       projects: {
-        nodes: []
+        nodes: [],
+        pageInfo: {
+          hasNextPage: false,
+          nextPage: ''
+        }
+      }
+    },
+    burndowns: {
+      totalCount: 0,
+      edges: [],
+      pageInfo: {
+        startCursor: '',
+        endCursor: '',
+        hasNextPage: false,
+        hasPreviousPage: false
       }
     }
   };
@@ -81,7 +95,11 @@ export function convertWorkspace(workspace: asana.resources.Workspaces.Type | as
     id: workspace.gid,
     name: workspace.name,
     projects: {
-      nodes: []
+      nodes: [],
+      pageInfo: {
+        hasNextPage: false,
+        nextPage: ''
+      }
     }
   };
 }
@@ -90,9 +108,10 @@ export function convertTask(task: asana.resources.Tasks.Type): Task {
   const custom_field = task.custom_fields.find(field => (field.name === 'Story Points' && (field as any).number_value));
   return {
     id: task.gid,
+    taskId: task.gid,
     name: task.name,
     storyPoints: custom_field ? (custom_field as any).number_value ? (custom_field as any).number_value : 1 : 1,
-    defaultPoints: custom_field ? (custom_field as any).number_value ? false : true : true,
+    hasPoints: custom_field ? (custom_field as any).number_value ? true : false : false,
     completed: task.completed,
     completedAt: task.completed_at ? new Date(task.completed_at) : null,
     dueOn: task.due_on ? new Date(task.due_on) : null,
@@ -109,6 +128,16 @@ export function convertUser(user: asana.resources.Users.Type): User & { photoUrl
     photoUrls: user.photo,
     workspaces: {
       nodes: []
+    },
+    burndowns: {
+      totalCount: 0,
+      edges: [],
+      pageInfo: {
+        startCursor: '',
+        endCursor: '',
+        hasNextPage: false,
+        hasPreviousPage: false
+      }
     }
   };
 }

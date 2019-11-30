@@ -3,7 +3,23 @@ scalar DateTime
 scalar Date
 scalar URL
 
-type PageInfo {
+input DateQuery {
+  lt: Date
+  lte: Date
+  gt: Date
+  gte: Date
+  eq: Date
+}
+
+input DateTimeQuery {
+  lt: Date
+  lte: DateTime
+  gt: Date
+  gte: DateTime
+  eq: Date
+}
+
+type AsanaPageInfo {
   nextPage: String
   hasNextPage: Boolean!
 }
@@ -16,7 +32,66 @@ type Workspace {
 
 type WorkspaceConnection {
   nodes: [Workspace]
-  pageInfo: PageInfo
+  pageInfo: AsanaPageInfo
+}
+
+type BurndownPoint {
+  x: Date!
+  y: Float!
+}
+
+type PageInfo {
+  startCursor: String
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+enum OrderDirection {
+  ASC
+  DESC
+}
+
+type BurndownEdge {
+  node: Burndown!
+  cursor: String!
+}
+
+type BurndownConnection {
+  totalCount: Int!
+  edges: [BurndownEdge]!
+  pageInfo: PageInfo!
+}
+
+enum BurndownField {
+  CREATED_AT
+  MODIFIED_AT
+}
+
+input BurndownOrder {
+  direction: OrderDirection!
+  field: BurndownField!
+}
+
+type Burndown {
+  id: ID!
+  name: String
+  description: String
+  project: Project!
+  createdAt: DateTime
+  modifiedAt: DateTime
+  tasks(first: Int, after: String, completed: Boolean, hasPoints: Boolean, orderBy: TaskOrder): BurndownTaskConnection!
+  expectedPath: [BurndownPoint]!
+  currentPath: [BurndownPoint]!
+  user: User!
+}
+
+input BurndownInput {
+  id: ID!
+  name: String
+  description: String
+  projectId: ID!
+  tasks: [TaskInput]!
 }
 
 type ProjectStatus {
@@ -37,16 +112,32 @@ type Project {
   dueOn: Date
   startOn: Date
   tasks(first: Int, after: String): TaskConnection!
+  burndowns(first: Int, after: String, orderBy: BurndownOrder): BurndownConnection!
   workspace: Workspace!
 }
   
 type ProjectConnection {
   nodes: [Project]
-  pageInfo: PageInfo
+  pageInfo: AsanaPageInfo!
+}
+
+enum TaskField {
+  TASK_ID
+  STORY_POINTS
+  COMPLETED_AT
+  DUE_ON
+  CREATED_AT
+  MODIFIED_AT
+}
+
+input TaskOrder {
+  direction: OrderDirection!
+  field: TaskField!
 }
 
 type Task {
   id: ID!
+  taskId: ID!
   name: String
   storyPoints: Float
   completed: Boolean
@@ -54,11 +145,35 @@ type Task {
   dueOn: Date
   createdAt: DateTime
   modifiedAt: DateTime
-  defaultPoints: Boolean
+  hasPoints: Boolean
+}
+
+input TaskInput {
+  id: ID!
+  taskId: ID!
+  name: String
+  storyPoints: Float
+  completed: Boolean
+  completedAt: DateTime
+  createdAt: DateTime!
+  modifiedAt: DateTime
+  dueOn: Date
+  hasPoints: Boolean
 }
 
 type TaskConnection {
   nodes: [Task]
+  pageInfo: AsanaPageInfo
+}
+
+type TaskEdge {
+  node: Task!
+  cursor: String!
+}
+
+type BurndownTaskConnection {
+  totalCount: Int
+  edges: [TaskEdge]
   pageInfo: PageInfo
 }
 
@@ -76,6 +191,7 @@ type User {
   name: String!
   photo(size: PhotoSize!): URL
   workspaces(first: Int, after: String): WorkspaceConnection!
+  burndowns(first: Int, after: String, orderBy: BurndownOrder): BurndownConnection!
 }
 
 type Query {
@@ -83,4 +199,9 @@ type Query {
   workspace(id: ID!): Workspace
   project(id: ID!): Project
   task(id: ID!): Task
+}
+
+type Mutation {
+  generateBurndown(projectId: ID!): Burndown!
+  saveBurndown(burndown: BurndownInput!): Burndown!
 }

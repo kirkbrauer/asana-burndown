@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useViewerQuery, User, useWorkspacesQuery, useWorkspaceQuery, WorkspaceFragment, useProjectsQuery, ProjectFragment, useProjectQuery, PageInfo, ProjectsDocument, ProjectsQuery, ProjectsQueryVariables, ProjectsQueryResult } from '../graphql';
+import { useViewerQuery, User, useWorkspacesQuery, useWorkspaceQuery, WorkspaceFragment, useProjectsQuery, ProjectFragment, useProjectQuery, AsanaPageInfo, ProjectsDocument, ProjectsQuery, ProjectsQueryVariables, ProjectsQueryResult } from '../graphql';
 import { useAppContext } from './context';
 import { useApolloClient } from '@apollo/react-hooks';
 
@@ -58,7 +58,7 @@ export const useProjects = (workspaceId: string, options?: UseProjectsOptions) =
   const [refetching, setRefetching] = useState(false);
   // Check if data was loaded
   let projects: ProjectFragment[] = [];
-  let pageInfo: PageInfo = null;
+  let pageInfo: AsanaPageInfo = null;
   let hasNextPage = false;
   if (data) {
     if (data.workspace) {

@@ -1,15 +1,19 @@
-import { createConnection, Connection } from 'typeorm';
+import { createConnection, getConnection } from 'typeorm';
 // Import entities
 import User from './entities/User';
-// Export the database connection
-export let connection: Connection;
+import Burndown from './entities/Burndown';
+import Task from './entities/Task';
 
 export default async function connectToDatabase() {
-  connection = await createConnection({
+  return createConnection({
     type: 'postgres',
     url: process.env.DATABASE_URL,
-    synchronize: true,
-    entities: [User]
+    synchronize: process.env.TYPEORM_SYNCHRONIZE === 'true',
+    logging: process.env.TYPEORM_LOGGING === 'true',
+    entities: [
+      User,
+      Burndown,
+      Task
+    ]
   });
-  return connection;
 }
