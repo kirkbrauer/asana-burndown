@@ -1,6 +1,7 @@
 import { getConnection } from 'typeorm';
 import { IResolvers } from 'graphql-tools';
 import { encode, decode } from 'opaqueid';
+import _ from 'lodash';
 import uuid from 'uuid/v4';
 import { paginate } from 'typeorm-graphql-pagination';
 import User from './entities/User';
@@ -8,7 +9,7 @@ import Task from './entities/Task';
 import Burndown from './entities/Burndown';
 import { ContextType } from './apollo';
 import { convertProject, convertWorkspace, convertTask, convertUser } from './asanaClient';
-import { Workspace, Project, PhotoSize, Burndown as GraphQLBurndown, Task as GraphQLTask, TaskField, OrderDirection, TaskOrder, BurndownInput, BurndownField, BurndownOrder } from './graphql/types';
+import { Workspace, Project, PhotoSize, Burndown as GraphQLBurndown, Task as GraphQLTask, TaskField, OrderDirection, TaskOrder, BurndownInput, BurndownField, BurndownOrder, BurndownPoint } from './graphql/types';
 
 const calculateTotalPoints = (tasks: (Task | GraphQLTask)[]) => {
   let totalPoints = 0;
@@ -17,6 +18,34 @@ const calculateTotalPoints = (tasks: (Task | GraphQLTask)[]) => {
     totalPoints += task.storyPoints;
   }
   return totalPoints;
+};
+
+const generatePath = (tasks: (Task | GraphQLTask)[]) => {
+  const expectedTasks = _.groupBy(tasks, (task: Task) => task.dueOn ? (task.dueOn instanceof Date ? new Date(task.dueOn.toISOString().substr(0, 10)).getTime() : task.dueOn) : null);
+  const completedTasks = _.groupBy(tasks.filter(task => task.completed), (task: Task) => task.completedAt instanceof Date ? new Date(task.completedAt.toISOString().substr(0, 10)).getTime() : task.completedAt);
+  const dates = _.uniq([...Object.keys(expectedTasks), ...Object.keys(completedTasks)]).filter(date => date !== 'null').sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+  const totalPoints = calculateTotalPoints(tasks);
+  let expectedPoints = totalPoints;
+  let completedPoints = totalPoints;
+  const path: BurndownPoint[] = [];
+  for (const date of dates) {
+    if (expectedTasks[date]) {
+      for (const task of expectedTasks[date] as GraphQLTask[]) {
+        expectedPoints -= task.storyPoints;
+      }
+    }
+    if (completedTasks[date]) {
+      for (const task of completedTasks[date] as GraphQLTask[]) {
+        completedPoints -= task.storyPoints;
+      }
+    }
+    path.push({
+      date: new Date(parseInt(date, 10)),
+      completed: completedPoints,
+      expected: expectedPoints
+    });
+  }
+  return path;
 };
 
 const taskFieldToString = (field: TaskField) => {
@@ -46,36 +75,12 @@ const resolvers: IResolvers<{}, ContextType> = {
     },
     async task(obj: any, { id }, { client }) {
       return convertTask(await client.tasks.findById(id));
+    },
+    async burndown(obj: any, { id }) {
+      return getConnection().getRepository(Burndown).findOne({ id });
     }
   },
   Mutation: {
-    async generateBurndown(obj: any, { projectId }, { user, client }) {
-      // Load the project tasks from the Asana API
-      let offset = undefined;
-      let tasks = [];
-      do {
-        const taskData = await client.tasks.findByProject(projectId, {
-          offset,
-          limit: 100,
-          opt_fields: 'name,created_at,completed_at,completed,due_on,parent,custom_fields'
-        });
-        if (taskData._response.next_page) offset = taskData._response.next_page.offset;
-        else offset = undefined;
-        tasks = [...tasks, ...taskData.data.map((task) => {
-          const convertedTask = convertTask(task);
-          // Set the task ID
-          convertedTask.id = uuid();
-          convertedTask.taskId = task.gid;
-          return convertedTask;
-        })];
-      } while (offset);
-      return {
-        tasks,
-        user: user as any,
-        id: uuid(),
-        project: projectId
-      };
-    },
     async saveBurndown(obj: any, { burndown }: { burndown: BurndownInput }, { user }) {
       // Create a new burndown chart
       const newBurndown = new Burndown();
@@ -110,7 +115,7 @@ const resolvers: IResolvers<{}, ContextType> = {
     }
   },
   Burndown: {
-    async tasks(burndown: Burndown | GraphQLBurndown, { first, after, completed, hasPoints, orderBy }) {
+    async tasks(burndown: Burndown | GraphQLBurndown, { first, after, completed, hasPoints, orderBy, dueOn, completedAt, hasDueDate }) {
       const order: TaskOrder = orderBy || { field: TaskField.CreatedAt, direction: OrderDirection.Asc };
       if (burndown.tasks instanceof Promise) {
         let queryBuilder = getConnection()
@@ -123,9 +128,53 @@ const resolvers: IResolvers<{}, ContextType> = {
         if (hasPoints !== undefined) {
           queryBuilder = queryBuilder.where('task.hasPoints = :hasPoints', { hasPoints });
         }
-        return paginate({
+        if (hasDueDate !== undefined) {
+          if (hasDueDate) {
+            queryBuilder = queryBuilder.where('task.dueOn IS NOT NULL');
+          } else {
+            queryBuilder = queryBuilder.where('task.dueOn IS NULL');
+          }
+        }
+        if (dueOn !== undefined) {
+          if (hasDueDate === undefined) queryBuilder = queryBuilder.where('task.dueOn IS NOT NULL');
+          if (dueOn.eq) {
+            queryBuilder = queryBuilder.where('task.dueOn = :dueOn', { dueOn: dueOn.eq.toISOString().substr(0, 10) });
+          }
+          if (dueOn.lt) {
+            queryBuilder = queryBuilder.where('task.dueOn < :dueOn', { dueOn: dueOn.lt.toISOString().substr(0, 10) });
+          }
+          if (dueOn.gt) {
+            queryBuilder = queryBuilder.where('task.dueOn > :dueOn', { dueOn: dueOn.gt.toISOString().substr(0, 10) });
+          }
+          if (dueOn.lte) {
+            queryBuilder = queryBuilder.where('task.dueOn <= :dueOn', { dueOn: dueOn.lte.toISOString().substr(0, 10) });
+          }
+          if (dueOn.gte) {
+            queryBuilder = queryBuilder.where('task.dueOn >= :dueOn', { dueOn: dueOn.gte.toISOString().substr(0, 10) });
+          }
+        }
+        if (completedAt !== undefined) {
+          queryBuilder = queryBuilder.where('task.completedAt IS NOT NULL');
+          if (completedAt.eq) {
+            queryBuilder = queryBuilder.where('task.completedAt = :completedAt', { completedAt: completedAt.eq });
+          }
+          if (completedAt.lt) {
+            queryBuilder = queryBuilder.where('task.completedAt < :completedAt', { completedAt: completedAt.lt });
+          }
+          if (completedAt.gt) {
+            queryBuilder = queryBuilder.where('task.completedAt > :completedAt', { completedAt: completedAt.gt });
+          }
+          if (completedAt.lte) {
+            queryBuilder = queryBuilder.where('task.completedAt <= :completedAt', { completedAt: completedAt.lte });
+          }
+          if (completedAt.gte) {
+            queryBuilder = queryBuilder.where('task.completedAt >= :completedAt', { completedAt: completedAt.gte });
+          }
+        }
+        // Paginate the tasks
+        const paginated = await paginate({
           after,
-          first: first || 10,
+          first: first || 1000,
           orderBy: order as any
         }, {
           queryBuilder,
@@ -134,8 +183,83 @@ const resolvers: IResolvers<{}, ContextType> = {
           validateCursor: true,
           orderFieldToKey: taskFieldToString
         });
+        // Count the total points
+        let totalPoints = 0;
+        for (const edge of paginated.edges) {
+          totalPoints += edge.node.storyPoints;
+        }
+        return {
+          totalPoints,
+          ...paginated
+        };
       }
-      let tasks = burndown.tasks as GraphQLTask[];
+      let tasks: GraphQLTask[] = burndown.tasks as any;
+      // Handle pagination
+      let offset = 0;
+      if (after) {
+        // Read the index from the cursor and set the offset
+        offset = parseInt(decode(after).split('|')[2], 10) + 1;
+      }
+      let count = 1000;
+      if (first) {
+        count = first;
+      }
+      // Filter tasks
+      if (completed !== undefined) {
+        tasks = tasks.filter(task => task.completed === completed);
+      }
+      if (hasPoints !== undefined) {
+        tasks = tasks.filter(task => task.hasPoints === hasPoints);
+      }
+      if (hasDueDate !== undefined) {
+        if (hasDueDate) {
+          tasks = tasks.filter(task => task.dueOn);
+        } else {
+          tasks = tasks.filter(task => !task.dueOn);
+        }
+      }
+      if (dueOn !== undefined) {
+        if (hasDueDate === undefined) tasks = tasks.filter(task => task.dueOn);
+        if (dueOn.eq) {
+          tasks = tasks.filter(task => task.dueOn.getTime() === dueOn.eq.getTime());
+        }
+        if (dueOn.lt) {
+          tasks = tasks.filter(task => task.dueOn.getTime() < dueOn.lt.getTime());
+        }
+        if (dueOn.gt) {
+          tasks = tasks.filter(task => task.dueOn.getTime() > dueOn.gt.getTime());
+        }
+        if (dueOn.lte) {
+          tasks = tasks.filter(task => task.dueOn.getTime() <= dueOn.lte.getTime());
+        }
+        if (dueOn.gte) {
+          tasks = tasks.filter(task => task.dueOn.getTime() >= dueOn.gte.getTime());
+        }
+      }
+      if (completedAt !== undefined) {
+        tasks = tasks.filter(task => task.completedAt);
+        if (completedAt.eq) {
+          tasks = tasks.filter(task => task.completedAt.getTime() === completedAt.eq.getTime());
+        }
+        if (completedAt.lt) {
+          tasks = tasks.filter(task => task.completedAt.getTime() < completedAt.lt.getTime());
+        }
+        if (completedAt.gt) {
+          tasks = tasks.filter(task => task.completedAt.getTime() > completedAt.gt.getTime());
+        }
+        if (completedAt.lte) {
+          tasks = tasks.filter(task => task.completedAt.getTime() <= completedAt.lte.getTime());
+        }
+        if (completedAt.gte) {
+          tasks = tasks.filter(task => task.completedAt.getTime() >= completedAt.gte.getTime());
+        }
+      }
+      // Get the total count
+      const totalCount = tasks.length;
+      // Get the total number of points
+      const totalPoints = calculateTotalPoints(tasks);
+      // Slice the tasks
+      tasks = tasks.slice(offset, count + offset);
       const field = taskFieldToString(order.field);
       // Sort the tasks
       tasks = tasks.sort((taskA, taskB) => {
@@ -165,26 +289,6 @@ const resolvers: IResolvers<{}, ContextType> = {
         }
         return bField - aField;
       });
-      // Get the total count
-      const totalCount = tasks.length;
-      // Handle pagination
-      let offset = 0;
-      if (after) {
-        // Read the index from the cursor and set the offset
-        offset = parseInt(decode(after).split('|')[2], 10) + 1;
-      }
-      let count = 10;
-      if (first) {
-        count = first;
-      }
-      tasks = tasks.slice(offset, count + offset);
-      // Filter tasks
-      if (completed !== undefined) {
-        tasks = tasks.filter(task => task.completed === completed);
-      }
-      if (hasPoints !== undefined) {
-        tasks = tasks.filter(task => task.hasPoints === hasPoints);
-      }
       // Convert tasks to task edges and generate cursors
       const edges = tasks.map((task, index) => ({
         node: task,
@@ -192,6 +296,7 @@ const resolvers: IResolvers<{}, ContextType> = {
       }));
       // Return paginated tasks
       return {
+        totalPoints,
         totalCount,
         edges,
         pageInfo: {
@@ -202,92 +307,19 @@ const resolvers: IResolvers<{}, ContextType> = {
         }
       };
     },
-    async currentPath(burndown: Burndown | GraphQLBurndown) {
+    async path(burndown: Burndown | GraphQLBurndown) {
       if (burndown.tasks instanceof Promise) {
         const tasks: Task[] = await getConnection()
         .getRepository(Task)
         .createQueryBuilder('task')
         .innerJoin('task.burndowns', 'taskBurndown', 'taskBurndown.id = :burndownId', { burndownId: burndown.id })
-        .where('task.dueOn IS NOT NULL')
         .orderBy('task.completedAt', 'ASC', 'NULLS FIRST')
         .getMany();
         // Generate the current path
-        let points = calculateTotalPoints(tasks);
-        return tasks
-          .filter(task => task.completed)
-          .filter(task => task.completedAt)
-          .filter(task => task.completedAt.getTime() <= Date.now())
-          .map((task) => {
-            // Subtract the task's story points from the total points
-            points -= task.storyPoints;
-            return {
-              x: task.completedAt!,
-              y: points
-            };
-          });
+        return generatePath(tasks);
       }
-      let tasks = burndown.tasks as GraphQLTask[];
-      tasks = tasks.filter(task => task.dueOn);
-      let points = calculateTotalPoints(tasks);
-      return tasks
-        .filter(task => task.completed)
-        .filter(task => task.completedAt)
-        .filter(task => task.completedAt.getTime() <= Date.now())
-        .sort((taskA, taskB) => {
-          return taskA.completedAt!.getTime() - taskB.completedAt!.getTime();
-        })
-        .map((task) => {
-          // Subtract the task's story points from the total points
-          points -= task.storyPoints;
-          return {
-            x: task.completedAt!,
-            y: points
-          };
-        });
-    },
-    async expectedPath(burndown: Burndown) {
-      if (burndown.tasks instanceof Promise) {
-        const tasks: Task[] = await getConnection()
-          .getRepository(Task)
-          .createQueryBuilder('task')
-          .innerJoin('task.burndowns', 'taskBurndown', 'taskBurndown.id = :burndownId', { burndownId: burndown.id })
-          .where('task.dueOn IS NOT NULL')
-          .orderBy('task.completedAt', 'ASC', 'NULLS FIRST')
-          .getMany();
-        // Generate the expected path
-        let points = calculateTotalPoints(tasks);
-        return tasks.map((task) => {
-          // Subtract the task's story points from the total points
-          points -= task.storyPoints;
-          // Push the task to the chart tasks array
-          return {
-            x: task.dueOn!,
-            y: points
-          };
-        });
-      }
-      let tasks = burndown.tasks as GraphQLTask[];
-      tasks = tasks.filter(task => task.dueOn);
-      let points = calculateTotalPoints(tasks);
-      return tasks
-        .sort((taskA, taskB) => {
-          // Nulls come first
-          if (!taskA.completedAt) {
-            return -1;
-          }
-          if (!taskB.completedAt) {
-            return 1;
-          }
-          return taskA.completedAt!.getTime() - taskB.completedAt!.getTime();
-        })
-        .map((task) => {
-          // Subtract the task's story points from the total points
-          points -= task.storyPoints;
-          return {
-            x: task.dueOn!,
-            y: points
-          };
-        });
+      const tasks: GraphQLTask[] = burndown.tasks as any;
+      return generatePath(tasks);
     }
   },
   User: {
@@ -404,6 +436,39 @@ const resolvers: IResolvers<{}, ContextType> = {
           }
         }
       });
+    },
+    async burndown(project: Project, { }, { user, client }) {
+      // Load the project tasks from the Asana API
+      let offset = undefined;
+      let tasks = [];
+      do {
+        const taskData = await client.tasks.findByProject(project.id, {
+          offset,
+          limit: 100,
+          opt_fields: 'name,created_at,completed_at,completed,due_on,parent,custom_fields'
+        });
+        if (taskData._response.next_page) offset = taskData._response.next_page.offset;
+        else offset = undefined;
+        tasks = [...tasks, ...taskData.data.map((task) => {
+          const convertedTask = convertTask(task);
+          // Set the task ID
+          convertedTask.id = uuid();
+          convertedTask.taskId = task.gid;
+          return convertedTask;
+        })];
+      } while (offset);
+      return {
+        tasks,
+        user: user as any,
+        createdAt: new Date(Date.now()),
+        id: uuid(),
+        project: project.id
+      };
+    },
+  },
+  Task: {
+    hasDueDate(task: Task) {
+      return Boolean(task.dueOn);
     }
   }
 };

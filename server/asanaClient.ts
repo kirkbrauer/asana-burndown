@@ -14,7 +14,8 @@ export function asanaClientMiddleware(req: Request, res: Response, next: NextFun
       next();
     });
   } else {
-    next();
+    res.status(401);
+    res.send('Unauthorized');
   }
 }
 
@@ -86,7 +87,8 @@ export function convertProject(project: asana.resources.Projects.Type): Project 
         hasNextPage: false,
         hasPreviousPage: false
       }
-    }
+    },
+    burndown: null
   };
 }
 
@@ -112,6 +114,7 @@ export function convertTask(task: asana.resources.Tasks.Type): Task {
     name: task.name,
     storyPoints: custom_field ? (custom_field as any).number_value ? (custom_field as any).number_value : 1 : 1,
     hasPoints: custom_field ? (custom_field as any).number_value ? true : false : false,
+    hasDueDate: Boolean(task.due_on),
     completed: task.completed,
     completedAt: task.completed_at ? new Date(task.completed_at) : null,
     dueOn: task.due_on ? new Date(task.due_on) : null,

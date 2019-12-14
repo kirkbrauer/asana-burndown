@@ -8,8 +8,6 @@ generates:
       - typescript
     config:
       scalars:
-        DateTime: Date
-        Date: Date
         EmailAddress: string
         URL: string
   ./graphql/index.tsx:
@@ -23,7 +21,5 @@ generates:
       withComponent: false
       namingConvention: keep
       scalars:
-        DateTime: Date
-        Date: Date
         EmailAddress: string
         URL: string

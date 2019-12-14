@@ -12,11 +12,11 @@ input DateQuery {
 }
 
 input DateTimeQuery {
-  lt: Date
+  lt: DateTime
   lte: DateTime
-  gt: Date
+  gt: DateTime
   gte: DateTime
-  eq: Date
+  eq: DateTime
 }
 
 type AsanaPageInfo {
@@ -36,8 +36,9 @@ type WorkspaceConnection {
 }
 
 type BurndownPoint {
-  x: Date!
-  y: Float!
+  date: Date!
+  completed: Float!
+  expected: Float!
 }
 
 type PageInfo {
@@ -80,9 +81,8 @@ type Burndown {
   project: Project!
   createdAt: DateTime
   modifiedAt: DateTime
-  tasks(first: Int, after: String, completed: Boolean, hasPoints: Boolean, orderBy: TaskOrder): BurndownTaskConnection!
-  expectedPath: [BurndownPoint]!
-  currentPath: [BurndownPoint]!
+  tasks(first: Int, after: String, completed: Boolean, hasPoints: Boolean, hasDueDate: Boolean, orderBy: TaskOrder, dueOn: DateQuery, completedAt: DateTimeQuery): BurndownTaskConnection!
+  path: [BurndownPoint]!
   user: User!
 }
 
@@ -113,6 +113,7 @@ type Project {
   startOn: Date
   tasks(first: Int, after: String): TaskConnection!
   burndowns(first: Int, after: String, orderBy: BurndownOrder): BurndownConnection!
+  burndown: Burndown!
   workspace: Workspace!
 }
   
@@ -143,9 +144,10 @@ type Task {
   completed: Boolean
   completedAt: DateTime
   dueOn: Date
+  hasDueDate: Boolean!
   createdAt: DateTime
   modifiedAt: DateTime
-  hasPoints: Boolean
+  hasPoints: Boolean!
 }
 
 input TaskInput {
@@ -172,9 +174,10 @@ type TaskEdge {
 }
 
 type BurndownTaskConnection {
-  totalCount: Int
+  totalPoints: Float!
+  totalCount: Int!
   edges: [TaskEdge]
-  pageInfo: PageInfo
+  pageInfo: PageInfo!
 }
 
 enum PhotoSize {
@@ -199,9 +202,9 @@ type Query {
   workspace(id: ID!): Workspace
   project(id: ID!): Project
   task(id: ID!): Task
+  burndown(id: ID!): Burndown
 }
 
 type Mutation {
-  generateBurndown(projectId: ID!): Burndown!
   saveBurndown(burndown: BurndownInput!): Burndown!
 }

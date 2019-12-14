@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useViewerQuery, User, useWorkspacesQuery, useWorkspaceQuery, WorkspaceFragment, useProjectsQuery, ProjectFragment, useProjectQuery, AsanaPageInfo, ProjectsDocument, ProjectsQuery, ProjectsQueryVariables, ProjectsQueryResult } from '../graphql';
+import { useViewerQuery, User, useWorkspacesQuery, useWorkspaceQuery, WorkspaceFragment, useProjectsQuery, ProjectFragment, useProjectQuery, AsanaPageInfo, Burndown, useGenerateBurndownQuery } from '../graphql';
 import { useAppContext } from './context';
 import { useApolloClient } from '@apollo/react-hooks';
 
@@ -121,4 +121,24 @@ export const useProject = (id: string) => {
     }
   }
   return { project, loading, error };
+};
+
+export const useGenerateBurndown = (projectId: string) => {
+  const { data, loading, error } = useGenerateBurndownQuery({
+    variables: {
+      projectId,
+      today: new Date(Date.now()).toISOString().substr(0, 10),
+      upcomingLimit: new Date(Date.now() + (60 * 60 * 24 * 7) * 1000).toISOString().substr(0, 10) // One week in the future
+    },
+    ssr: false
+  });
+  let burndown: Partial<Burndown>;
+  if (data) {
+    if (data.project) {
+      if (data.project.burndown) {
+        burndown = data.project.burndown;
+      }
+    }
+  }
+  return { burndown, loading, error };
 };

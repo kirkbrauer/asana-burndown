@@ -1,0 +1,7 @@
+fragment Burndown on Burndown {
+  id
+  name
+  description
+  createdAt
+  modifiedAt
+}

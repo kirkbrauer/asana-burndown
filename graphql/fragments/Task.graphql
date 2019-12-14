@@ -1,0 +1,12 @@
+fragment Task on Task {
+  id
+  taskId
+  name
+  storyPoints
+  hasPoints
+  completed
+  completedAt
+  dueOn
+  createdAt
+  modifiedAt
+}

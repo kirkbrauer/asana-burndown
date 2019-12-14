@@ -2,12 +2,13 @@ import React from 'react';
 import { makeStyles, createStyles } from '@material-ui/core/styles';
 import { NextPage } from 'next';
 import Content from '../../../../components/Content';
-import { useProject } from '../../../../lib/hooks';
+import { useProject, useGenerateBurndown } from '../../../../lib/hooks';
 import { useRouter } from 'next/router';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import Moment from 'react-moment';
+import BurndownChart from '../../../../components/BurndownChart';
 
 const useStyles = makeStyles(theme =>
   createStyles({
@@ -25,6 +26,7 @@ const Project: NextPage = () => {
   const classes = useStyles({});
   const router = useRouter();
   const { project, loading } = useProject(router.query.projectId as string);
+  const { burndown, loading: generatingBurndown } = useGenerateBurndown(router.query.projectId as string);
   if (loading) {
     return (
       <Content>
@@ -56,6 +58,7 @@ const Project: NextPage = () => {
         </Paper>
         <Paper className={classes.paperContent}>
           <Typography variant="h6">Project Burndown</Typography>
+          <BurndownChart loading={generatingBurndown} path={burndown ? burndown.path : []} name={project.name} />
         </Paper>
       </Content>
     );

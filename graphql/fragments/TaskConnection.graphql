@@ -1,0 +1,12 @@
+fragment BurndownTaskConnection on BurndownTaskConnection {
+  totalCount
+  edges {
+    node {
+      ...Task
+    }
+    cursor
+  }
+  pageInfo {
+    ...PageInfo
+  }
+}

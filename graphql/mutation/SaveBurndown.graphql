@@ -1,0 +1,5 @@
+mutation SaveBurndown($burndown: BurndownInput!) {
+  saveBurndown(burndown: $burndown) {
+    ...Burndown
+  }
+}

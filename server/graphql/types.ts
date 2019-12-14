@@ -8,8 +8,8 @@ export type Scalars = {
   Float: number,
   EmailAddress: string,
   URL: string,
-  DateTime: Date,
-  Date: Date,
+  DateTime: any,
+  Date: any,
 };
 
 export type AsanaPageInfo = {
@@ -27,8 +27,7 @@ export type Burndown = {
   createdAt?: Maybe<Scalars['DateTime']>,
   modifiedAt?: Maybe<Scalars['DateTime']>,
   tasks: BurndownTaskConnection,
-  expectedPath: Array<Maybe<BurndownPoint>>,
-  currentPath: Array<Maybe<BurndownPoint>>,
+  path: Array<Maybe<BurndownPoint>>,
   user: User,
 };
 
@@ -38,7 +37,10 @@ export type BurndownTasksArgs = {
   after?: Maybe<Scalars['String']>,
   completed?: Maybe<Scalars['Boolean']>,
   hasPoints?: Maybe<Scalars['Boolean']>,
-  orderBy?: Maybe<TaskOrder>
+  hasDueDate?: Maybe<Scalars['Boolean']>,
+  orderBy?: Maybe<TaskOrder>,
+  dueOn?: Maybe<DateQuery>,
+  completedAt?: Maybe<DateTimeQuery>
 };
 
 export type BurndownConnection = {
@@ -74,15 +76,17 @@ export type BurndownOrder = {
 
 export type BurndownPoint = {
    __typename?: 'BurndownPoint',
-  x: Scalars['Date'],
-  y: Scalars['Float'],
+  date: Scalars['Date'],
+  completed: Scalars['Float'],
+  expected: Scalars['Float'],
 };
 
 export type BurndownTaskConnection = {
    __typename?: 'BurndownTaskConnection',
-  totalCount?: Maybe<Scalars['Int']>,
+  totalPoints: Scalars['Float'],
+  totalCount: Scalars['Int'],
   edges?: Maybe<Array<Maybe<TaskEdge>>>,
-  pageInfo?: Maybe<PageInfo>,
+  pageInfo: PageInfo,
 };
 
 
@@ -96,23 +100,17 @@ export type DateQuery = {
 
 
 export type DateTimeQuery = {
-  lt?: Maybe<Scalars['Date']>,
+  lt?: Maybe<Scalars['DateTime']>,
   lte?: Maybe<Scalars['DateTime']>,
-  gt?: Maybe<Scalars['Date']>,
+  gt?: Maybe<Scalars['DateTime']>,
   gte?: Maybe<Scalars['DateTime']>,
-  eq?: Maybe<Scalars['Date']>,
+  eq?: Maybe<Scalars['DateTime']>,
 };
 
 
 export type Mutation = {
    __typename?: 'Mutation',
-  generateBurndown: Burndown,
   saveBurndown: Burndown,
-};
-
-
-export type MutationGenerateBurndownArgs = {
-  projectId: Scalars['ID']
 };
 
 
@@ -156,6 +154,7 @@ export type Project = {
   startOn?: Maybe<Scalars['Date']>,
   tasks: TaskConnection,
   burndowns: BurndownConnection,
+  burndown: Burndown,
   workspace: Workspace,
 };
 
@@ -168,7 +167,8 @@ export type ProjectTasksArgs = {
 
 export type ProjectBurndownsArgs = {
   first?: Maybe<Scalars['Int']>,
-  after?: Maybe<Scalars['String']>
+  after?: Maybe<Scalars['String']>,
+  orderBy?: Maybe<BurndownOrder>
 };
 
 export type ProjectConnection = {
@@ -189,6 +189,7 @@ export type Query = {
   workspace?: Maybe<Workspace>,
   project?: Maybe<Project>,
   task?: Maybe<Task>,
+  burndown?: Maybe<Burndown>,
 };
 
 
@@ -206,6 +207,11 @@ export type QueryTaskArgs = {
   id: Scalars['ID']
 };
 
+
+export type QueryBurndownArgs = {
+  id: Scalars['ID']
+};
+
 export type Task = {
    __typename?: 'Task',
   id: Scalars['ID'],
@@ -215,9 +221,10 @@ export type Task = {
   completed?: Maybe<Scalars['Boolean']>,
   completedAt?: Maybe<Scalars['DateTime']>,
   dueOn?: Maybe<Scalars['Date']>,
+  hasDueDate: Scalars['Boolean'],
   createdAt?: Maybe<Scalars['DateTime']>,
   modifiedAt?: Maybe<Scalars['DateTime']>,
-  hasPoints?: Maybe<Scalars['Boolean']>,
+  hasPoints: Scalars['Boolean'],
 };
 
 export type TaskConnection = {
