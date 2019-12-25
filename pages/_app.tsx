@@ -8,9 +8,13 @@ import withApollo from '../lib/apollo';
 import ApolloClient from 'apollo-client';
 import { ApolloProvider } from '@apollo/react-hooks';
 import { RouterProvider } from 'use-next-route';
+import { MuiPickersUtilsProvider } from '@material-ui/pickers';
+import DateFnsUtils from '@date-io/date-fns';
 import { AppContextProvider } from '../lib/context';
 import Cookies from 'js-cookie';
 import Navigation from '../components/Navigation';
+import ProjectHeader from '../components/ProjectHeader';
+import Content from '../components/Content';
 
 type AppProps = {
   apollo: ApolloClient<any>
@@ -65,11 +69,22 @@ class MyApp extends App<AppProps, {}, AppState> {
     let appContent;
     if (router.route !== '/login') {
       // Only wrap app components with navigation
-      appContent = (
-        <Navigation>
-          <Component {...pageProps} />
-        </Navigation>
-      );
+      if (router.route.includes('/w/[workspaceId]/p/[projectId]')) {
+        appContent = (
+          <Navigation>
+            <Content disablePadding>
+              <ProjectHeader/>
+              <Component {...pageProps} />
+            </Content>
+          </Navigation>
+        );
+      } else {
+        appContent = (
+          <Navigation>
+            <Component {...pageProps} />
+          </Navigation>
+        );
+      }
     } else {
       appContent = (
         <Component {...pageProps} />
@@ -83,16 +98,18 @@ class MyApp extends App<AppProps, {}, AppState> {
         <ThemeProvider theme={darkMode ? darkTheme : lightTheme}>
           <CssBaseline />
           <RouterProvider route={router.route}>
-            <AppContextProvider value={{
-              workspaceId,
-              darkMode,
-              setWorkspaceId: id => this.setWorkspaceId(id),
-              setDarkMode: enabled => this.setDarkMode(enabled)
-            }}>
-              <ApolloProvider client={apollo}>
-                {appContent}
-              </ApolloProvider>
-            </AppContextProvider>
+            <MuiPickersUtilsProvider utils={DateFnsUtils}>
+              <AppContextProvider value={{
+                workspaceId,
+                darkMode,
+                setWorkspaceId: id => this.setWorkspaceId(id),
+                setDarkMode: enabled => this.setDarkMode(enabled)
+              }}>
+                <ApolloProvider client={apollo}>
+                  {appContent}
+                </ApolloProvider>
+              </AppContextProvider>
+            </MuiPickersUtilsProvider>
           </RouterProvider>
         </ThemeProvider>
       </React.Fragment>

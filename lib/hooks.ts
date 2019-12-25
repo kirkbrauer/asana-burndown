@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useViewerQuery, User, useWorkspacesQuery, useWorkspaceQuery, WorkspaceFragment, useProjectsQuery, ProjectFragment, useProjectQuery, AsanaPageInfo, Burndown, useGenerateBurndownQuery } from '../graphql';
+import { useViewerQuery, User, useWorkspacesQuery, useWorkspaceQuery, WorkspaceFragment, useProjectsQuery, ProjectFragment, useProjectQuery, AsanaPageInfo, Burndown, useGenerateBurndownQuery, BurndownPoint, Task, PageInfo, useProjectTasksQuery, TaskOrder, DateQuery, DateTimeQuery, IntQuery } from '../graphql';
 import { useAppContext } from './context';
-import { useApolloClient } from '@apollo/react-hooks';
 
 export const useViewer = () => {
   const { data, loading, error } = useViewerQuery();
@@ -53,7 +52,6 @@ export const useProjects = (workspaceId: string, options?: UseProjectsOptions) =
       ...options
     }
   });
-  const client = useApolloClient();
   const [fetchingMore, setFetchingMore] = useState(false);
   const [refetching, setRefetching] = useState(false);
   // Check if data was loaded
@@ -126,19 +124,96 @@ export const useProject = (id: string) => {
 export const useGenerateBurndown = (projectId: string) => {
   const { data, loading, error } = useGenerateBurndownQuery({
     variables: {
-      projectId,
-      today: new Date(Date.now()).toISOString().substr(0, 10),
-      upcomingLimit: new Date(Date.now() + (60 * 60 * 24 * 7) * 1000).toISOString().substr(0, 10) // One week in the future
+      projectId
     },
     ssr: false
   });
   let burndown: Partial<Burndown>;
+  let path: BurndownPoint[] = [];
   if (data) {
     if (data.project) {
       if (data.project.burndown) {
         burndown = data.project.burndown;
+        path = data.project.burndown.path;
       }
     }
   }
-  return { burndown, loading, error };
+  return { burndown, path, loading, error };
+};
+
+type TaskConnectionOptions = {
+  first?: number,
+  after?: string,
+  skip?: number,
+  completed?: boolean,
+  storyPoints?: IntQuery,
+  hasPoints?: boolean,
+  orderBy?: TaskOrder,
+  dueOn?: DateQuery,
+  completedAt?: DateTimeQuery,
+  createdAt?: DateTimeQuery,
+  modifiedAt?: DateTimeQuery,
+  hasDueDate?: boolean,
+  reload?: boolean
+};
+
+export const useProjectTasks = (projectId: string, options: TaskConnectionOptions) => {
+  const { data, loading, error, fetchMore: fetchMoreFn, refetch: refetchFn } = useProjectTasksQuery({ 
+    variables: {
+      ...options,
+      reload: false,
+      id: projectId
+    },
+    ssr: false
+  });
+  const [fetchingMore, setFetchingMore] = useState(false);
+  const [refetching, setRefetching] = useState(false);
+  let tasks: Partial<Task>[] = [];
+  let tasksPageInfo: PageInfo;
+  let tasksTotalCount: number = 0;
+  let tasksTotalPoints: number = 0;
+  if (data) {
+    if (data.project) {
+      tasks = data.project.tasks.edges.map(edge => edge.node);
+      tasksPageInfo = data.project.tasks.pageInfo;
+      tasksTotalCount = data.project.tasks.totalCount;
+      tasksTotalPoints = data.project.tasks.totalPoints;
+    }
+  }
+  // Load more function
+  const fetchMore = async () => {
+    setFetchingMore(true);
+    return fetchMoreFn({
+      variables: {
+        ...options,
+        after: tasksPageInfo.endCursor
+      },
+      updateQuery: (previousResult: any, { fetchMoreResult }) => {
+        if (fetchMoreResult) {
+          // Extract the data
+          const previousTaskEdges = previousResult.project.tasks.edges;
+          const newTaskEdges = fetchMoreResult.project.tasks.edges;
+          const pageInfo = fetchMoreResult.project.tasks.pageInfo;
+          // Merge the new data with the old data
+          return {
+            ...previousResult,
+            project: {
+              ...previousResult.project,
+              tasks: {
+                ...previousResult.project.tasks,
+                pageInfo,
+                edges: [...previousTaskEdges, ...newTaskEdges]
+              }
+            }
+          };
+        }
+        return previousResult;
+      }
+    }).then(() => setFetchingMore(false));
+  };
+  const refetch = async () => {
+    setRefetching(true);
+    return refetchFn({ ...options, id: projectId, reload: true }).then(() => setRefetching(false));
+  };
+  return { tasks, tasksPageInfo, tasksTotalCount, tasksTotalPoints, loading, error, fetchMore, fetchingMore, refetch, refetching };
 };

@@ -62,7 +62,7 @@ const condenseData = (burndownPath: BurndownPoint[], maxDates: number) => {
     const valuesPerPoint = Math.ceil(burndownPath.length / maxDates);
     for (let i = 0; i < maxDates; i += 1) {
       if (burndownPath[i * valuesPerPoint]) {
-        const date = burndownPath[i * valuesPerPoint].date.substr(5, 6);
+        const date = burndownPath[i * valuesPerPoint].date;
         let completed = 0;
         let expected = 0;
         for (let j = 0; j < valuesPerPoint; j += 1) {
@@ -79,7 +79,7 @@ const condenseData = (burndownPath: BurndownPoint[], maxDates: number) => {
       }
     }
   }
-  return path;
+  return path.map(point => ({ completed: point.completed, expected: point.expected, date: point.date.substr(5, 6) }));
 };
 
 const BurndownChart: FunctionComponent<BurndownChartProps> = ({ loading, path: burndownPath, name }) => {

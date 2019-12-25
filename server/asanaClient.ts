@@ -66,7 +66,13 @@ export function convertProject(project: asana.resources.Projects.Type): Project 
     dueOn: (project as any).due_on,
     startOn: (project as any).start_on,
     tasks: {
-      nodes: []
+      totalCount: 0,
+      totalPoints: 0,
+      edges: [],
+      pageInfo: {
+        hasNextPage: false,
+        hasPreviousPage: false
+      }
     },
     workspace: {
       id: project.workspace.gid,

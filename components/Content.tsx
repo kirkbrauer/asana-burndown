@@ -3,6 +3,7 @@ import { makeStyles, createStyles, Theme } from '@material-ui/core';
 
 type ContentProps = {
   disablePadding?: boolean,
+  disableToolbar?: boolean,
   ref?: Ref<HTMLDivElement>
 };
 
@@ -17,11 +18,11 @@ const useStyles = makeStyles<Theme, ContentProps>((theme: Theme) =>
   })
 );
 
-const Content: FunctionComponent<ContentProps> = forwardRef<HTMLDivElement, ContentProps>(({ children, disablePadding }, ref) => {
+const Content: FunctionComponent<ContentProps> = forwardRef<HTMLDivElement, ContentProps>(({ children, disablePadding, disableToolbar }, ref) => {
   const classes = useStyles({ disablePadding });
   return (
     <div className={classes.content} ref={ref}>
-      <div className={classes.toolbar}/>
+      {!disableToolbar && <div className={classes.toolbar}/>}
       {children}
     </div>
   );

@@ -26,7 +26,7 @@ export type Burndown = {
   project: Project,
   createdAt?: Maybe<Scalars['DateTime']>,
   modifiedAt?: Maybe<Scalars['DateTime']>,
-  tasks: BurndownTaskConnection,
+  tasks: TaskConnection,
   path: Array<Maybe<BurndownPoint>>,
   user: User,
 };
@@ -35,12 +35,17 @@ export type Burndown = {
 export type BurndownTasksArgs = {
   first?: Maybe<Scalars['Int']>,
   after?: Maybe<Scalars['String']>,
+  skip?: Maybe<Scalars['Int']>,
   completed?: Maybe<Scalars['Boolean']>,
+  storyPoints?: Maybe<IntQuery>,
   hasPoints?: Maybe<Scalars['Boolean']>,
   hasDueDate?: Maybe<Scalars['Boolean']>,
   orderBy?: Maybe<TaskOrder>,
   dueOn?: Maybe<DateQuery>,
-  completedAt?: Maybe<DateTimeQuery>
+  completedAt?: Maybe<DateTimeQuery>,
+  createdAt?: Maybe<DateTimeQuery>,
+  modifiedAt?: Maybe<DateTimeQuery>,
+  reload?: Maybe<Scalars['Boolean']>
 };
 
 export type BurndownConnection = {
@@ -81,14 +86,6 @@ export type BurndownPoint = {
   expected: Scalars['Float'],
 };
 
-export type BurndownTaskConnection = {
-   __typename?: 'BurndownTaskConnection',
-  totalPoints: Scalars['Float'],
-  totalCount: Scalars['Int'],
-  edges?: Maybe<Array<Maybe<TaskEdge>>>,
-  pageInfo: PageInfo,
-};
-
 
 export type DateQuery = {
   lt?: Maybe<Scalars['Date']>,
@@ -96,6 +93,7 @@ export type DateQuery = {
   gt?: Maybe<Scalars['Date']>,
   gte?: Maybe<Scalars['Date']>,
   eq?: Maybe<Scalars['Date']>,
+  ne?: Maybe<Scalars['Date']>,
 };
 
 
@@ -105,8 +103,18 @@ export type DateTimeQuery = {
   gt?: Maybe<Scalars['DateTime']>,
   gte?: Maybe<Scalars['DateTime']>,
   eq?: Maybe<Scalars['DateTime']>,
+  ne?: Maybe<Scalars['DateTime']>,
 };
 
+
+export type IntQuery = {
+  lt?: Maybe<Scalars['Int']>,
+  lte?: Maybe<Scalars['Int']>,
+  gt?: Maybe<Scalars['Int']>,
+  gte?: Maybe<Scalars['Int']>,
+  eq?: Maybe<Scalars['Int']>,
+  ne?: Maybe<Scalars['Int']>,
+};
 
 export type Mutation = {
    __typename?: 'Mutation',
@@ -161,7 +169,18 @@ export type Project = {
 
 export type ProjectTasksArgs = {
   first?: Maybe<Scalars['Int']>,
-  after?: Maybe<Scalars['String']>
+  after?: Maybe<Scalars['String']>,
+  skip?: Maybe<Scalars['Int']>,
+  completed?: Maybe<Scalars['Boolean']>,
+  storyPoints?: Maybe<IntQuery>,
+  hasPoints?: Maybe<Scalars['Boolean']>,
+  hasDueDate?: Maybe<Scalars['Boolean']>,
+  orderBy?: Maybe<TaskOrder>,
+  dueOn?: Maybe<DateQuery>,
+  completedAt?: Maybe<DateTimeQuery>,
+  createdAt?: Maybe<DateTimeQuery>,
+  modifiedAt?: Maybe<DateTimeQuery>,
+  reload?: Maybe<Scalars['Boolean']>
 };
 
 
@@ -229,8 +248,10 @@ export type Task = {
 
 export type TaskConnection = {
    __typename?: 'TaskConnection',
-  nodes?: Maybe<Array<Maybe<Task>>>,
-  pageInfo?: Maybe<AsanaPageInfo>,
+  totalPoints: Scalars['Float'],
+  totalCount: Scalars['Int'],
+  edges?: Maybe<Array<Maybe<TaskEdge>>>,
+  pageInfo: PageInfo,
 };
 
 export type TaskEdge = {

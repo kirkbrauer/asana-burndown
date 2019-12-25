@@ -5,8 +5,8 @@ import Content from '../../../components/Content';
 const Recent: NextPage = () => {
   return (
     <Content>
-        <div>Recent</div>
-      </Content>
+      <div>Recent</div>
+    </Content>
   );
 };
 

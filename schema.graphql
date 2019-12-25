@@ -9,6 +9,7 @@ input DateQuery {
   gt: Date
   gte: Date
   eq: Date
+  ne: Date
 }
 
 input DateTimeQuery {
@@ -17,6 +18,16 @@ input DateTimeQuery {
   gt: DateTime
   gte: DateTime
   eq: DateTime
+  ne: DateTime
+}
+
+input IntQuery {
+  lt: Int
+  lte: Int
+  gt: Int
+  gte: Int
+  eq: Int
+  ne: Int
 }
 
 type AsanaPageInfo {
@@ -81,7 +92,7 @@ type Burndown {
   project: Project!
   createdAt: DateTime
   modifiedAt: DateTime
-  tasks(first: Int, after: String, completed: Boolean, hasPoints: Boolean, hasDueDate: Boolean, orderBy: TaskOrder, dueOn: DateQuery, completedAt: DateTimeQuery): BurndownTaskConnection!
+  tasks(first: Int, after: String, skip: Int, completed: Boolean, storyPoints: IntQuery, hasPoints: Boolean, hasDueDate: Boolean, orderBy: TaskOrder, dueOn: DateQuery, completedAt: DateTimeQuery, createdAt: DateTimeQuery, modifiedAt: DateTimeQuery, reload: Boolean): TaskConnection!
   path: [BurndownPoint]!
   user: User!
 }
@@ -111,7 +122,7 @@ type Project {
   modifiedAt: DateTime!
   dueOn: Date
   startOn: Date
-  tasks(first: Int, after: String): TaskConnection!
+  tasks(first: Int, after: String, skip: Int, completed: Boolean, storyPoints: IntQuery, hasPoints: Boolean, hasDueDate: Boolean, orderBy: TaskOrder, dueOn: DateQuery, completedAt: DateTimeQuery, createdAt: DateTimeQuery, modifiedAt: DateTimeQuery, reload: Boolean): TaskConnection!
   burndowns(first: Int, after: String, orderBy: BurndownOrder): BurndownConnection!
   burndown: Burndown!
   workspace: Workspace!
@@ -163,17 +174,12 @@ input TaskInput {
   hasPoints: Boolean
 }
 
-type TaskConnection {
-  nodes: [Task]
-  pageInfo: AsanaPageInfo
-}
-
 type TaskEdge {
   node: Task!
   cursor: String!
 }
 
-type BurndownTaskConnection {
+type TaskConnection {
   totalPoints: Float!
   totalCount: Int!
   edges: [TaskEdge]

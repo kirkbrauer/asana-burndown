@@ -29,7 +29,7 @@ export type Burndown = {
   project: Project,
   createdAt?: Maybe<Scalars['DateTime']>,
   modifiedAt?: Maybe<Scalars['DateTime']>,
-  tasks: BurndownTaskConnection,
+  tasks: TaskConnection,
   path: Array<Maybe<BurndownPoint>>,
   user: User,
 };
@@ -38,12 +38,17 @@ export type Burndown = {
 export type BurndowntasksArgs = {
   first?: Maybe<Scalars['Int']>,
   after?: Maybe<Scalars['String']>,
+  skip?: Maybe<Scalars['Int']>,
   completed?: Maybe<Scalars['Boolean']>,
+  storyPoints?: Maybe<IntQuery>,
   hasPoints?: Maybe<Scalars['Boolean']>,
   hasDueDate?: Maybe<Scalars['Boolean']>,
   orderBy?: Maybe<TaskOrder>,
   dueOn?: Maybe<DateQuery>,
-  completedAt?: Maybe<DateTimeQuery>
+  completedAt?: Maybe<DateTimeQuery>,
+  createdAt?: Maybe<DateTimeQuery>,
+  modifiedAt?: Maybe<DateTimeQuery>,
+  reload?: Maybe<Scalars['Boolean']>
 };
 
 export type BurndownConnection = {
@@ -84,14 +89,6 @@ export type BurndownPoint = {
   expected: Scalars['Float'],
 };
 
-export type BurndownTaskConnection = {
-   __typename?: 'BurndownTaskConnection',
-  totalPoints: Scalars['Float'],
-  totalCount: Scalars['Int'],
-  edges?: Maybe<Array<Maybe<TaskEdge>>>,
-  pageInfo: PageInfo,
-};
-
 
 export type DateQuery = {
   lt?: Maybe<Scalars['Date']>,
@@ -99,6 +96,7 @@ export type DateQuery = {
   gt?: Maybe<Scalars['Date']>,
   gte?: Maybe<Scalars['Date']>,
   eq?: Maybe<Scalars['Date']>,
+  ne?: Maybe<Scalars['Date']>,
 };
 
 
@@ -108,8 +106,18 @@ export type DateTimeQuery = {
   gt?: Maybe<Scalars['DateTime']>,
   gte?: Maybe<Scalars['DateTime']>,
   eq?: Maybe<Scalars['DateTime']>,
+  ne?: Maybe<Scalars['DateTime']>,
 };
 
+
+export type IntQuery = {
+  lt?: Maybe<Scalars['Int']>,
+  lte?: Maybe<Scalars['Int']>,
+  gt?: Maybe<Scalars['Int']>,
+  gte?: Maybe<Scalars['Int']>,
+  eq?: Maybe<Scalars['Int']>,
+  ne?: Maybe<Scalars['Int']>,
+};
 
 export type Mutation = {
    __typename?: 'Mutation',
@@ -164,7 +172,18 @@ export type Project = {
 
 export type ProjecttasksArgs = {
   first?: Maybe<Scalars['Int']>,
-  after?: Maybe<Scalars['String']>
+  after?: Maybe<Scalars['String']>,
+  skip?: Maybe<Scalars['Int']>,
+  completed?: Maybe<Scalars['Boolean']>,
+  storyPoints?: Maybe<IntQuery>,
+  hasPoints?: Maybe<Scalars['Boolean']>,
+  hasDueDate?: Maybe<Scalars['Boolean']>,
+  orderBy?: Maybe<TaskOrder>,
+  dueOn?: Maybe<DateQuery>,
+  completedAt?: Maybe<DateTimeQuery>,
+  createdAt?: Maybe<DateTimeQuery>,
+  modifiedAt?: Maybe<DateTimeQuery>,
+  reload?: Maybe<Scalars['Boolean']>
 };
 
 
@@ -232,8 +251,10 @@ export type Task = {
 
 export type TaskConnection = {
    __typename?: 'TaskConnection',
-  nodes?: Maybe<Array<Maybe<Task>>>,
-  pageInfo?: Maybe<AsanaPageInfo>,
+  totalPoints: Scalars['Float'],
+  totalCount: Scalars['Int'],
+  edges?: Maybe<Array<Maybe<TaskEdge>>>,
+  pageInfo: PageInfo,
 };
 
 export type TaskEdge = {
@@ -328,50 +349,6 @@ export type BurndownPointFragment = (
   & Pick<BurndownPoint, 'date' | 'expected' | 'completed'>
 );
 
-export type GenerateBurndownQueryVariables = {
-  projectId: Scalars['ID'],
-  today: Scalars['Date'],
-  upcomingLimit: Scalars['Date']
-};
-
-
-export type GenerateBurndownQuery = (
-  { __typename?: 'Query' }
-  & { project: Maybe<(
-    { __typename?: 'Project' }
-    & Pick<Project, 'id'>
-    & { burndown: (
-      { __typename?: 'Burndown' }
-      & { tasks: (
-        { __typename?: 'BurndownTaskConnection' }
-        & BurndownTaskConnectionFragment
-      ), completedTasks: (
-        { __typename?: 'BurndownTaskConnection' }
-        & BurndownTaskConnectionFragment
-      ), incompleteTasks: (
-        { __typename?: 'BurndownTaskConnection' }
-        & BurndownTaskConnectionFragment
-      ), missingPoints: (
-        { __typename?: 'BurndownTaskConnection' }
-        & BurndownTaskConnectionFragment
-      ), missingDueDate: (
-        { __typename?: 'BurndownTaskConnection' }
-        & BurndownTaskConnectionFragment
-      ), overdueTasks: (
-        { __typename?: 'BurndownTaskConnection' }
-        & BurndownTaskConnectionFragment
-      ), upcomingTasks: (
-        { __typename?: 'BurndownTaskConnection' }
-        & BurndownTaskConnectionFragment
-      ), path: Array<Maybe<(
-        { __typename?: 'BurndownPoint' }
-        & BurndownPointFragment
-      )>> }
-      & BurndownFragment
-    ) }
-  )> }
-);
-
 export type PageInfoFragment = (
   { __typename?: 'PageInfo' }
   & Pick<PageInfo, 'hasNextPage' | 'hasPreviousPage' | 'startCursor' | 'endCursor'>
@@ -391,9 +368,9 @@ export type TaskFragment = (
   & Pick<Task, 'id' | 'taskId' | 'name' | 'storyPoints' | 'hasPoints' | 'completed' | 'completedAt' | 'dueOn' | 'createdAt' | 'modifiedAt'>
 );
 
-export type BurndownTaskConnectionFragment = (
-  { __typename?: 'BurndownTaskConnection' }
-  & Pick<BurndownTaskConnection, 'totalCount'>
+export type TaskConnectionFragment = (
+  { __typename?: 'TaskConnection' }
+  & Pick<TaskConnection, 'totalCount' | 'totalPoints'>
   & { edges: Maybe<Array<Maybe<(
     { __typename?: 'TaskEdge' }
     & Pick<TaskEdge, 'cursor'>
@@ -425,6 +402,27 @@ export type SaveBurndownMutation = (
   ) }
 );
 
+export type GenerateBurndownQueryVariables = {
+  projectId: Scalars['ID']
+};
+
+
+export type GenerateBurndownQuery = (
+  { __typename?: 'Query' }
+  & { project: Maybe<(
+    { __typename?: 'Project' }
+    & Pick<Project, 'id'>
+    & { burndown: (
+      { __typename?: 'Burndown' }
+      & { path: Array<Maybe<(
+        { __typename?: 'BurndownPoint' }
+        & BurndownPointFragment
+      )>> }
+      & BurndownFragment
+    ) }
+  )> }
+);
+
 export type ProjectQueryVariables = {
   id: Scalars['ID']
 };
@@ -439,6 +437,36 @@ export type ProjectQuery = (
       & Pick<Workspace, 'id'>
     ) }
     & ProjectFragment
+  )> }
+);
+
+export type ProjectTasksQueryVariables = {
+  id: Scalars['ID'],
+  first?: Maybe<Scalars['Int']>,
+  after?: Maybe<Scalars['String']>,
+  skip?: Maybe<Scalars['Int']>,
+  completed?: Maybe<Scalars['Boolean']>,
+  hasPoints?: Maybe<Scalars['Boolean']>,
+  hasDueDate?: Maybe<Scalars['Boolean']>,
+  orderBy?: Maybe<TaskOrder>,
+  storyPoints?: Maybe<IntQuery>,
+  dueOn?: Maybe<DateQuery>,
+  completedAt?: Maybe<DateTimeQuery>,
+  createdAt?: Maybe<DateTimeQuery>,
+  modifiedAt?: Maybe<DateTimeQuery>,
+  reload?: Maybe<Scalars['Boolean']>
+};
+
+
+export type ProjectTasksQuery = (
+  { __typename?: 'Query' }
+  & { project: Maybe<(
+    { __typename?: 'Project' }
+    & Pick<Project, 'id'>
+    & { tasks: (
+      { __typename?: 'TaskConnection' }
+      & TaskConnectionFragment
+    ) }
   )> }
 );
 
@@ -569,9 +597,10 @@ export const PageInfoFragmentDoc = gql`
   endCursor
 }
     `;
-export const BurndownTaskConnectionFragmentDoc = gql`
-    fragment BurndownTaskConnection on BurndownTaskConnection {
+export const TaskConnectionFragmentDoc = gql`
+    fragment TaskConnection on TaskConnection {
   totalCount
+  totalPoints
   edges {
     node {
       ...Task
@@ -590,70 +619,6 @@ export const WorkspaceFragmentDoc = gql`
   name
 }
     `;
-export const GenerateBurndownDocument = gql`
-    query GenerateBurndown($projectId: ID!, $today: Date!, $upcomingLimit: Date!) {
-  project(id: $projectId) {
-    id
-    burndown {
-      ...Burndown
-      tasks {
-        ...BurndownTaskConnection
-      }
-      completedTasks: tasks(completed: true) {
-        ...BurndownTaskConnection
-      }
-      incompleteTasks: tasks(completed: false) {
-        ...BurndownTaskConnection
-      }
-      missingPoints: tasks(hasPoints: false) {
-        ...BurndownTaskConnection
-      }
-      missingDueDate: tasks(hasDueDate: false) {
-        ...BurndownTaskConnection
-      }
-      overdueTasks: tasks(completed: false, dueOn: {lt: $today}) {
-        ...BurndownTaskConnection
-      }
-      upcomingTasks: tasks(completed: false, dueOn: {gte: $today, lte: $upcomingLimit}) {
-        ...BurndownTaskConnection
-      }
-      path {
-        ...BurndownPoint
-      }
-    }
-  }
-}
-    ${BurndownFragmentDoc}
-${BurndownTaskConnectionFragmentDoc}
-${BurndownPointFragmentDoc}`;
-
-/**
- * __useGenerateBurndownQuery__
- *
- * To run a query within a React component, call `useGenerateBurndownQuery` and pass it any options that fit your needs.
- * When your component renders, `useGenerateBurndownQuery` returns an object from Apollo Client that contains loading, error, and data properties 
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useGenerateBurndownQuery({
- *   variables: {
- *      projectId: // value for 'projectId'
- *      today: // value for 'today'
- *      upcomingLimit: // value for 'upcomingLimit'
- *   },
- * });
- */
-export function useGenerateBurndownQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<GenerateBurndownQuery, GenerateBurndownQueryVariables>) {
-        return ApolloReactHooks.useQuery<GenerateBurndownQuery, GenerateBurndownQueryVariables>(GenerateBurndownDocument, baseOptions);
-      }
-export function useGenerateBurndownLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GenerateBurndownQuery, GenerateBurndownQueryVariables>) {
-          return ApolloReactHooks.useLazyQuery<GenerateBurndownQuery, GenerateBurndownQueryVariables>(GenerateBurndownDocument, baseOptions);
-        }
-export type GenerateBurndownQueryHookResult = ReturnType<typeof useGenerateBurndownQuery>;
-export type GenerateBurndownLazyQueryHookResult = ReturnType<typeof useGenerateBurndownLazyQuery>;
-export type GenerateBurndownQueryResult = ApolloReactCommon.QueryResult<GenerateBurndownQuery, GenerateBurndownQueryVariables>;
 export const SaveBurndownDocument = gql`
     mutation SaveBurndown($burndown: BurndownInput!) {
   saveBurndown(burndown: $burndown) {
@@ -686,6 +651,46 @@ export function useSaveBurndownMutation(baseOptions?: ApolloReactHooks.MutationH
 export type SaveBurndownMutationHookResult = ReturnType<typeof useSaveBurndownMutation>;
 export type SaveBurndownMutationResult = ApolloReactCommon.MutationResult<SaveBurndownMutation>;
 export type SaveBurndownMutationOptions = ApolloReactCommon.BaseMutationOptions<SaveBurndownMutation, SaveBurndownMutationVariables>;
+export const GenerateBurndownDocument = gql`
+    query GenerateBurndown($projectId: ID!) {
+  project(id: $projectId) {
+    id
+    burndown {
+      ...Burndown
+      path {
+        ...BurndownPoint
+      }
+    }
+  }
+}
+    ${BurndownFragmentDoc}
+${BurndownPointFragmentDoc}`;
+
+/**
+ * __useGenerateBurndownQuery__
+ *
+ * To run a query within a React component, call `useGenerateBurndownQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGenerateBurndownQuery` returns an object from Apollo Client that contains loading, error, and data properties 
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGenerateBurndownQuery({
+ *   variables: {
+ *      projectId: // value for 'projectId'
+ *   },
+ * });
+ */
+export function useGenerateBurndownQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<GenerateBurndownQuery, GenerateBurndownQueryVariables>) {
+        return ApolloReactHooks.useQuery<GenerateBurndownQuery, GenerateBurndownQueryVariables>(GenerateBurndownDocument, baseOptions);
+      }
+export function useGenerateBurndownLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GenerateBurndownQuery, GenerateBurndownQueryVariables>) {
+          return ApolloReactHooks.useLazyQuery<GenerateBurndownQuery, GenerateBurndownQueryVariables>(GenerateBurndownDocument, baseOptions);
+        }
+export type GenerateBurndownQueryHookResult = ReturnType<typeof useGenerateBurndownQuery>;
+export type GenerateBurndownLazyQueryHookResult = ReturnType<typeof useGenerateBurndownLazyQuery>;
+export type GenerateBurndownQueryResult = ApolloReactCommon.QueryResult<GenerateBurndownQuery, GenerateBurndownQueryVariables>;
 export const ProjectDocument = gql`
     query Project($id: ID!) {
   project(id: $id) {
@@ -722,6 +727,55 @@ export function useProjectLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHook
 export type ProjectQueryHookResult = ReturnType<typeof useProjectQuery>;
 export type ProjectLazyQueryHookResult = ReturnType<typeof useProjectLazyQuery>;
 export type ProjectQueryResult = ApolloReactCommon.QueryResult<ProjectQuery, ProjectQueryVariables>;
+export const ProjectTasksDocument = gql`
+    query ProjectTasks($id: ID!, $first: Int, $after: String, $skip: Int, $completed: Boolean, $hasPoints: Boolean, $hasDueDate: Boolean, $orderBy: TaskOrder, $storyPoints: IntQuery, $dueOn: DateQuery, $completedAt: DateTimeQuery, $createdAt: DateTimeQuery, $modifiedAt: DateTimeQuery, $reload: Boolean) {
+  project(id: $id) {
+    id
+    tasks(first: $first, after: $after, skip: $skip, completed: $completed, hasPoints: $hasPoints, hasDueDate: $hasDueDate, orderBy: $orderBy, storyPoints: $storyPoints, dueOn: $dueOn, completedAt: $completedAt, createdAt: $createdAt, modifiedAt: $modifiedAt, reload: $reload) {
+      ...TaskConnection
+    }
+  }
+}
+    ${TaskConnectionFragmentDoc}`;
+
+/**
+ * __useProjectTasksQuery__
+ *
+ * To run a query within a React component, call `useProjectTasksQuery` and pass it any options that fit your needs.
+ * When your component renders, `useProjectTasksQuery` returns an object from Apollo Client that contains loading, error, and data properties 
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useProjectTasksQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *      first: // value for 'first'
+ *      after: // value for 'after'
+ *      skip: // value for 'skip'
+ *      completed: // value for 'completed'
+ *      hasPoints: // value for 'hasPoints'
+ *      hasDueDate: // value for 'hasDueDate'
+ *      orderBy: // value for 'orderBy'
+ *      storyPoints: // value for 'storyPoints'
+ *      dueOn: // value for 'dueOn'
+ *      completedAt: // value for 'completedAt'
+ *      createdAt: // value for 'createdAt'
+ *      modifiedAt: // value for 'modifiedAt'
+ *      reload: // value for 'reload'
+ *   },
+ * });
+ */
+export function useProjectTasksQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<ProjectTasksQuery, ProjectTasksQueryVariables>) {
+        return ApolloReactHooks.useQuery<ProjectTasksQuery, ProjectTasksQueryVariables>(ProjectTasksDocument, baseOptions);
+      }
+export function useProjectTasksLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<ProjectTasksQuery, ProjectTasksQueryVariables>) {
+          return ApolloReactHooks.useLazyQuery<ProjectTasksQuery, ProjectTasksQueryVariables>(ProjectTasksDocument, baseOptions);
+        }
+export type ProjectTasksQueryHookResult = ReturnType<typeof useProjectTasksQuery>;
+export type ProjectTasksLazyQueryHookResult = ReturnType<typeof useProjectTasksLazyQuery>;
+export type ProjectTasksQueryResult = ApolloReactCommon.QueryResult<ProjectTasksQuery, ProjectTasksQueryVariables>;
 export const ProjectsDocument = gql`
     query Projects($workspaceId: ID!, $first: Int, $after: String, $archived: Boolean) {
   workspace(id: $workspaceId) {

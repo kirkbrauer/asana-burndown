@@ -1,5 +1,6 @@
-fragment BurndownTaskConnection on BurndownTaskConnection {
+fragment TaskConnection on TaskConnection {
   totalCount
+  totalPoints
   edges {
     node {
       ...Task

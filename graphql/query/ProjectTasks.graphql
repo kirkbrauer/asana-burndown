@@ -1,0 +1,8 @@
+query ProjectTasks($id: ID!, $first: Int, $after: String, $skip: Int, $completed: Boolean, $hasPoints: Boolean, $hasDueDate: Boolean, $orderBy: TaskOrder, $storyPoints: IntQuery, $dueOn: DateQuery, $completedAt: DateTimeQuery, $createdAt: DateTimeQuery, $modifiedAt: DateTimeQuery, $reload: Boolean) {
+  project(id: $id) {
+    id
+    tasks(first: $first, after: $after, skip: $skip, completed: $completed, hasPoints: $hasPoints, hasDueDate: $hasDueDate, orderBy: $orderBy, storyPoints: $storyPoints, dueOn: $dueOn, completedAt: $completedAt, createdAt: $createdAt, modifiedAt: $modifiedAt, reload: $reload) {
+      ...TaskConnection
+    }
+  }
+}
