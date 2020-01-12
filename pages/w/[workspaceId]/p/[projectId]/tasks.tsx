@@ -8,7 +8,14 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import Paper from '@material-ui/core/Paper';
 import IconButton from '@material-ui/core/IconButton';
 import RefreshIcon from '@material-ui/icons/Refresh';
+import FilterListIcon from '@material-ui/icons/FilterList';
 import Tooltip from '@material-ui/core/Tooltip';
+import Select from '@material-ui/core/Select';
+import Chip from '@material-ui/core/Chip';
+import Menu from '@material-ui/core/Menu';
+import MenuItem from '@material-ui/core/MenuItem';
+import Checkbox from '@material-ui/core/Checkbox';
+import Typography from '@material-ui/core/Typography';
 import Moment from 'react-moment';
 import { KeyboardDateTimePicker, KeyboardDatePicker } from '@material-ui/pickers';
 import { DataTypeProvider, PagingState, CustomPaging, SortingState, TableColumnWidthInfo, Sorting, FilteringState, Filter } from '@devexpress/dx-react-grid';
@@ -59,10 +66,13 @@ const useStyles = makeStyles(theme =>
     headerContent: {
       padding: theme.spacing(4)
     },
-    reloadButton: {
+    toolbarButtons: {
       position: 'absolute',
       top: theme.spacing(4),
-      left: theme.spacing(6)
+      left: theme.spacing(2),
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'center'
     }
   })
 );
@@ -103,6 +113,20 @@ const DateEditor = ({ value, onValueChange }) => {
   );
 };
 
+const BooleanEditor = ({ value, onValueChange }) => {
+  return (
+    <Select
+      value={value || 'none'}
+      onChange={e => onValueChange(e.target.value)}
+      style={{ width: '100%' }}
+    >
+      <MenuItem value="none">All</MenuItem>
+      <MenuItem value="true">Yes</MenuItem>
+      <MenuItem value="false">No</MenuItem>
+    </Select>
+  );
+};
+
 const taskColumnToEnum = (column: string) => {
   switch (column) {
     case 'taskId': return TaskField.TASK_ID;
@@ -114,54 +138,196 @@ const taskColumnToEnum = (column: string) => {
   }
 };
 
+const DEFAULT_CUSTOM_FILTERS: Filter[] = [
+  { columnName: 'storyPoints', operation: 'equal', value: '' },
+  { columnName: 'dueOn', operation: 'equal', value: null },
+  { columnName: 'due', operation: 'equal', value: null },
+  { columnName: 'completedAt', operation: 'equal', value: null },
+  { columnName: 'createdAt', operation: 'equal', value: null },
+  { columnName: 'created', operation: 'equal', value: null },
+  { columnName: 'modifiedAt', operation: 'equal', value: null },
+  { columnName: 'modified', operation: 'equal', value: null },
+  { columnName: 'complete', operation: 'equal', value: null },
+  { columnName: 'hasDueDate', operation: 'equal', value: 'none' },
+  { columnName: 'hasPoints', operation: 'equal', value: 'none' },
+];
+
+const DEFAULT_HIDDEN_COLUMN_NAMES = ['id', 'taskId', 'complete', 'due', 'created', 'createdAt', 'modified', 'modifiedAt', 'hasDueDate', 'hasPoints'];
+
+const FILTER_PRESETS = [
+  { 
+    id: 'complete',
+    enabled: false,
+    name: 'Complete',
+    filters: { complete: true },
+    hiddenColumns: ['id', 'taskId', 'due', 'created', 'createdAt', 'modified', 'modifiedAt', 'hasDueDate', 'hasPoints']
+  },
+  { 
+    id: 'incomplete',
+    enabled: false,
+    name: 'Incomplete',
+    filters: { complete: false },
+    hiddenColumns: ['id', 'taskId', 'completedAt', 'created', 'createdAt', 'modified', 'modifiedAt', 'hasDueDate', 'hasPoints']
+  },
+  { id: 'overdue',
+    enabled: false,
+    name: 'Overdue',
+    filters: {
+      dueOn: { lt: new Date(Date.now()).toISOString().substr(0, 10) },
+      complete: false
+    },
+    hiddenColumns: ['id', 'taskId', 'completedAt', 'complete', 'created', 'createdAt', 'modified', 'modifiedAt', 'hasDueDate', 'hasPoints']
+  },
+  { 
+    id: 'upcoming',
+    enabled: false,
+    name: 'Upcoming',
+    filters: {
+      dueOn: {
+        gte: new Date(Date.now()).toISOString().substr(0, 10),
+        lte: new Date(Date.now() + (1000 * 60 * 60 * 24 * 7)).toISOString().substr(0, 10)
+      },
+      complete: false
+    },
+    hiddenColumns: ['id', 'taskId', 'created', 'createdAt', 'modified', 'modifiedAt', 'hasDueDate', 'hasPoints']
+  },
+  {
+    id: 'missingDueDate',
+    enabled: false,
+    name: 'Missing Due Date',
+    filters: { hasDueDate: false },
+    hiddenColumns: ['id', 'taskId', 'created', 'complete', 'due', 'dueOn', 'createdAt', 'modified', 'modifiedAt', 'hasPoints']
+  },
+  {
+    id: 'missingStoryPoints',
+    enabled: false,
+    name: 'Missing Story Points',
+    filters: { hasPoints: false },
+    hiddenColumns: ['id', 'taskId', 'created', 'complete', 'due', 'createdAt', 'modified', 'modifiedAt', 'hasDueDate']
+  }
+];
+
+const COLUMN_WIDTHS: TableColumnWidthInfo[] = [
+  { columnName: 'id', width: 'auto' },
+  { columnName: 'taskId', width: 'auto' },
+  { columnName: 'name', width: '40%' },
+  { columnName: 'storyPoints', width: 'auto' },
+  { columnName: 'completedAt', width: 'auto' },
+  { columnName: 'complete', width: 'auto' },
+  { columnName: 'dueOn', width: 'auto' },
+  { columnName: 'due', width: 'auto' },
+  { columnName: 'createdAt', width: 'auto' },
+  { columnName: 'created', width: 'auto' },
+  { columnName: 'modifiedAt', width: 'auto' },
+  { columnName: 'modified', width: 'auto' },
+  { columnName: 'hasDueDate', width: 'auto' },
+  { columnName: 'hasPoints', width: 'auto' }
+];
+
 const ProjectTasks: NextPage = () => {
   const classes = useStyles({});
   const router = useRouter();
+  const [anchorEl, setAnchorEl] = useState<HTMLElement>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSizes] = useState([10, 20, 30, 50, 0]);
   const [pageSize, setPageSize] = useState(20);
-  const [hiddenColumnNames, setHiddenColumnNames] = useState(['id', 'taskId', 'completedAt', 'due', 'created', 'createdAt', 'modified', 'modifiedAt']);
-  const [columnWidths, setColumnWidths] = useState<TableColumnWidthInfo[]>([
-    { columnName: 'id', width: 'auto' },
-    { columnName: 'taskId', width: 'auto' },
-    { columnName: 'name', width: '50%' },
-    { columnName: 'storyPoints', width: 'auto' },
-    { columnName: 'completedAt', width: 'auto' },
-    { columnName: 'completed', width: 'auto' },
-    { columnName: 'dueOn', width: 'auto' },
-    { columnName: 'due', width: 'auto' },
-    { columnName: 'createdAt', width: 'auto' },
-    { columnName: 'created', width: 'auto' },
-    { columnName: 'modifiedAt', width: 'auto' },
-    { columnName: 'modified', width: 'auto' },
-  ]);
+  const [hiddenColumnNames, setHiddenColumnNames] = useState(DEFAULT_HIDDEN_COLUMN_NAMES);
+  const [columnWidths, setColumnWidths] = useState(COLUMN_WIDTHS);
   const [sorting, setSorting] = useState<Sorting[]>([{ columnName: 'createdAt', direction: 'asc' }]);
-  const [filters, setFilters] = useState<Filter[]>([
-    { columnName: 'storyPoints', operation: 'equal', value: '' },
-    { columnName: 'dueOn', operation: 'equal', value: null },
-    { columnName: 'due', operation: 'equal', value: null },
-    { columnName: 'completedAt', operation: 'equal', value: null },
-    { columnName: 'completed', operation: 'equal', value: null },
-    { columnName: 'createdAt', operation: 'equal', value: null },
-    { columnName: 'created', operation: 'equal', value: null },
-    { columnName: 'modifiedAt', operation: 'equal', value: null },
-    { columnName: 'modified', operation: 'equal', value: null },
-  ]);
+  const [customFilters, setCustomFilters] = useState(DEFAULT_CUSTOM_FILTERS);
+  const [filterPresets, setFilterPresets] = useState(FILTER_PRESETS);
   const [storyPoints, setStoryPoints] = useState<IntQuery>(undefined);
   const [dueOn, setDueOn] = useState<DateQuery>(undefined);
   const [completedAt, setCompletedAt] = useState<DateTimeQuery>(undefined);
   const [createdAt, setCreatedAt] = useState<DateTimeQuery>(undefined);
   const [modifiedAt, setModifiedAt] = useState<DateTimeQuery>(undefined);
+  const [hasDueDate, setHasDueDate] = useState<boolean>(undefined);
+  const [hasPoints, setHasPoints] = useState<boolean>(undefined);
+  const [complete, setComplete] = useState<boolean>(undefined);
   const { tasks, loading: loadingTasks, tasksTotalCount, refetch, refetching } = useProjectTasks(router.query.projectId as string, {
     storyPoints,
     dueOn,
     completedAt,
     createdAt,
     modifiedAt,
+    hasDueDate,
+    hasPoints,
+    complete,
     first: pageSize,
     skip: currentPage * pageSize,
     orderBy: { field: taskColumnToEnum(sorting[0].columnName), direction: sorting[0].direction === 'asc' ? OrderDirection.ASC : OrderDirection.DESC }
   });
+
+  const setFilterPreset = (id: string) => {
+    // Find the filter preset
+    const preset = filterPresets.find(preset => preset.id === id);
+    // Make sure the preset was found
+    if (preset) {
+      // Toggle the preset
+      const enabled = !preset.enabled;
+      // Enable the correct filters
+      if (enabled) {
+        // Set the query filters
+        setComplete(preset.filters.complete);
+        setDueOn(preset.filters.dueOn);
+        setHasDueDate(preset.filters.hasDueDate);
+        setHasPoints(preset.filters.hasPoints);
+        // Set the filter interface
+        setCustomFilters([
+          { columnName: 'storyPoints', operation: 'equal', value: '' },
+          { columnName: 'dueOn', operation:  preset.filters.dueOn ? 'equal' : 'greaterThan', value: preset.filters.dueOn !== undefined ? preset.filters.dueOn.gte : null },
+          { columnName: 'due', operation: 'equal', value: null },
+          { columnName: 'completedAt', operation: 'equal', value: null },
+          { columnName: 'createdAt', operation: 'equal', value: null },
+          { columnName: 'created', operation: 'equal', value: null },
+          { columnName: 'modifiedAt', operation: 'equal', value: null },
+          { columnName: 'modified', operation: 'equal', value: null },
+          { columnName: 'complete', operation: 'equal', value: preset.filters.complete !== undefined ? preset.filters.complete ? 'true' : 'false' : null },
+          { columnName: 'hasDueDate', operation: 'equal', value: preset.filters.hasDueDate !== undefined ? preset.filters.hasDueDate ? 'true' : 'false' : null },
+          { columnName: 'hasPoints', operation: 'equal', value: preset.filters.hasPoints !== undefined ? preset.filters.hasPoints ? 'true' : 'false' : null }
+        ]);
+        // Set the hidden columns
+        setHiddenColumnNames(preset.hiddenColumns || DEFAULT_HIDDEN_COLUMN_NAMES);
+      } else {
+        setComplete(undefined);
+        setDueOn(undefined);
+        setHasDueDate(undefined);
+        setHasPoints(undefined);
+        setCustomFilters(DEFAULT_CUSTOM_FILTERS);
+        setHiddenColumnNames(DEFAULT_HIDDEN_COLUMN_NAMES);
+      }
+      const presets = [];
+      for (const p of filterPresets) {
+        if (p.id === preset.id) {
+          presets.push({
+            ...p,
+            enabled
+          });
+        } else {
+          // Disable all other presets
+          presets.push({
+            ...p,
+            enabled: false
+          });
+        }
+      }
+      // Set the filter presets
+      setFilterPresets(presets);
+    }
+  };
+
+  // On component mount
+  useEffect(() => {
+    // Get the URL params from the window search
+    const urlParams = new URLSearchParams(window.location.search);
+    // Set the filter preset based on the filter query variable
+    if (urlParams.has('filter')) {
+      setFilterPreset(urlParams.get('filter') as string);
+      // Clear the URL param
+      router.replace(router.route, `/w/${router.query.workspaceId}/p/${router.query.projectId}/tasks`, { shallow: true });
+    }
+  }, []);
+
   return (
     <Content disableToolbar>
       <Paper className={classes.paperContent}>
@@ -173,13 +339,15 @@ const ProjectTasks: NextPage = () => {
             { name: 'name', title: 'Name' },
             { name: 'storyPoints', title: 'Points' },
             { name: 'completedAt', title: 'Completed At' },
-            { name: 'completed', title: 'Completed' },
+            { name: 'complete', title: 'Complete' },
             { name: 'dueOn', title: 'Due On' },
             { name: 'due', title: 'Due' },
             { name: 'createdAt', title: 'Created At' },
             { name: 'created', title: 'Created' },
             { name: 'modifiedAt', title: 'Modified At' },
             { name: 'modified', title: 'Modified' },
+            { name: 'hasDueDate', title: 'Has Due Date' },
+            { name: 'hasPoints', title: 'Has Points' },
           ]}
         >
           <Table messages={{ noData: '' }} />
@@ -197,13 +365,15 @@ const ProjectTasks: NextPage = () => {
               { columnName: 'name', sortingEnabled: false },
               { columnName: 'storyPoints', sortingEnabled: true },
               { columnName: 'completedAt', sortingEnabled: true },
-              { columnName: 'completed', sortingEnabled: true },
+              { columnName: 'complete', sortingEnabled: false },
               { columnName: 'dueOn', sortingEnabled: true },
               { columnName: 'due', sortingEnabled: true },
               { columnName: 'createdAt', sortingEnabled: true },
               { columnName: 'created', sortingEnabled: true },
               { columnName: 'modifiedAt', sortingEnabled: true },
               { columnName: 'modified', sortingEnabled: true },
+              { columnName: 'hasDueDate', sortingEnabled: false },
+              { columnName: 'hasPoints', sortingEnabled: false }
             ]}
           />
           <PagingState
@@ -238,7 +408,7 @@ const ProjectTasks: NextPage = () => {
             formatterComponent={({ value }) => value ? <Moment date={value} format="MM/DD/YY hh:mm A" /> : <div>-</div>}
           />
           <DataTypeProvider
-            for={['completed', 'created', 'modified']}
+            for={['created', 'modified']}
             availableFilterOperations={[
               'equal',
               'notEqual',
@@ -276,15 +446,37 @@ const ProjectTasks: NextPage = () => {
             editorComponent={DateEditor}
             formatterComponent={({ row, column }) => row[`${column.name}On`] ? <Moment date={row[`${column.name}On`]} fromNow /> : <div>-</div>}
           />
+          <DataTypeProvider
+            for={['complete', 'hasPoints']}
+            editorComponent={BooleanEditor}
+            formatterComponent={({ value }) => <div style={{ display: 'flex' }}><Chip style={{ margin: 'auto' }}  label={value ? 'Yes' : 'No'} /></div>}
+          />
+          <DataTypeProvider
+            for={['hasDueDate']}
+            editorComponent={BooleanEditor}
+            formatterComponent={({ row }) => <div style={{ display: 'flex' }}><Chip style={{ margin: 'auto' }}  label={row.dueOn !== null ? 'Yes' : 'No'} /></div>}
+          />
           <FilteringState
-            filters={filters}
+            filters={customFilters}
             onFiltersChange={(filters) => {
-              setFilters(filters);
+              // Disable all filter presets
+              const presets = [];
+              for (const preset of filterPresets) {
+                presets.push({ ...preset, enabled: false });
+              }
+              setFilterPresets(presets);
+              // Set the custom filters
+              setCustomFilters(filters);
+              // Reset all filters
               setStoryPoints(undefined);
               setDueOn(undefined);
               setCompletedAt(undefined);
               setCreatedAt(undefined);
               setModifiedAt(undefined);
+              setHasDueDate(undefined);
+              setHasPoints(undefined);
+              setComplete(undefined);
+              // Enable/disable the correct filters
               for (const filter of filters) {
                 switch (filter.columnName) {
                   case 'storyPoints': {
@@ -356,7 +548,6 @@ const ProjectTasks: NextPage = () => {
                     }
                     break;
                   }
-                  case 'completed':
                   case 'completedAt': {
                     let date;
                     if (filter.value) {
@@ -473,6 +664,36 @@ const ProjectTasks: NextPage = () => {
                     } 
                     break;
                   }
+                  case 'hasDueDate': {
+                    if (filter.value !== null) {
+                      if (filter.value === 'true') {
+                        setHasDueDate(true);
+                      } else if (filter.value === 'false') {
+                        setHasDueDate(false);
+                      }
+                    }
+                    break;
+                  }
+                  case 'hasPoints': {
+                    if (filter.value !== null) {
+                      if (filter.value === 'true') {
+                        setHasPoints(true);
+                      } else if (filter.value === 'false') {
+                        setHasPoints(false);
+                      }
+                    }
+                    break;
+                  }
+                  case 'complete': {
+                    if (filter.value !== null) {
+                      if (filter.value === 'true') {
+                        setComplete(true);
+                      } else if (filter.value === 'false') {
+                        setComplete(false);
+                      }
+                    }
+                    break;
+                  }
                 }
               }
             }}
@@ -482,13 +703,15 @@ const ProjectTasks: NextPage = () => {
               { columnName: 'name', filteringEnabled: false },
               { columnName: 'storyPoints', filteringEnabled: true },
               { columnName: 'completedAt', filteringEnabled: true },
-              { columnName: 'completed', filteringEnabled: true },
+              { columnName: 'complete', filteringEnabled: false },
               { columnName: 'dueOn', filteringEnabled: true },
               { columnName: 'due', filteringEnabled: true },
               { columnName: 'createdAt', filteringEnabled: true },
               { columnName: 'created', filteringEnabled: true },
               { columnName: 'modifiedAt', filteringEnabled: true },
-              { columnName: 'modified', filteringEnabled: true }
+              { columnName: 'modified', filteringEnabled: true },
+              { columnName: 'hasDueDate', filteringEnabled: true },
+              { columnName: 'hasPoints', filteringEnabled: true }
             ]}
           />
           <CustomPaging totalCount={tasksTotalCount} />
@@ -502,11 +725,48 @@ const ProjectTasks: NextPage = () => {
           <ColumnChooser />
           <PagingPanel pageSizes={pageSizes} />
         </Grid>
-        <Tooltip title="Reload Asana Data">
-          <IconButton className={classes.reloadButton} onClick={refetch}>
-            <RefreshIcon />
-          </IconButton>
-        </Tooltip>
+        <div className={classes.toolbarButtons}>
+          <Typography style={{ marginLeft: 16 }} variant="h6">
+            {filterPresets.filter(preset => preset.enabled).map(preset => preset.name).join(', ') || 'All Tasks'}
+          </Typography>
+          <Tooltip title="Filter Tasks">
+            <IconButton 
+              style={{ marginLeft: 8 }}
+              aria-controls="filter-menu"
+              aria-haspopup="true"
+              onClick={e => setAnchorEl(e.currentTarget)}
+            >
+              <FilterListIcon />
+            </IconButton>
+          </Tooltip>
+          <Menu
+            id="filter-menu"
+            anchorEl={anchorEl}
+            keepMounted
+            MenuListProps={{
+              dense: true
+            }}
+            open={Boolean(anchorEl)}
+            onClose={() => setAnchorEl(null)}
+          >
+            {filterPresets.map(preset => (
+              <MenuItem key={preset.id} onClick={() => setFilterPreset(preset.id)}>
+                <Checkbox
+                  disableRipple
+                  checked={preset.enabled}
+                  onClick={e => e.preventDefault()}
+                  style={{ padding: 0, marginRight: 8 }}
+                />
+                {preset.name}
+              </MenuItem>
+            ))}
+          </Menu>
+          <Tooltip title="Reload Asana Data">
+            <IconButton  onClick={refetch}>
+              <RefreshIcon />
+            </IconButton>
+          </Tooltip>
+        </div>
         {(loadingTasks || refetching) && (
           <>
             <div className={classes.tasksLoadingSpinnerBackground} />

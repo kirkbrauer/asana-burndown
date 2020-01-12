@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToMany } from 'typeorm';
 import Burndown from './Burndown';
 
 @Entity()
@@ -19,7 +19,7 @@ export class User {
   @Column({ nullable: true })
   refreshToken?: string;
 
-  @OneToMany(type => Burndown, burndown => burndown.user)
+  @ManyToMany(type => Burndown, burndown => burndown.users)
   burndowns: Promise<Burndown[]>;
 
 }

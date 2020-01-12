@@ -13,6 +13,8 @@ import { convertProject, convertWorkspace, convertTask, convertUser } from './as
 import { Workspace, Project, PhotoSize, Burndown as GraphQLBurndown, Task as GraphQLTask, TaskField, OrderDirection, TaskOrder, BurndownInput, BurndownField, BurndownOrder, BurndownPoint, DateQuery, DateTimeQuery, IntQuery } from './graphql/types';
 import redisClient from './redis';
 
+const MAX_RECENTS = process.env.MAX_RECENTS || 20;
+
 const calculateTotalPoints = (tasks: (Task | GraphQLTask)[]) => {
   let totalPoints = 0;
   // Get the total number of points
@@ -24,7 +26,7 @@ const calculateTotalPoints = (tasks: (Task | GraphQLTask)[]) => {
 
 const generatePath = (tasks: (Task | GraphQLTask)[]) => {
   const expectedTasks = _.groupBy(tasks, (task: Task) => task.dueOn ? (task.dueOn instanceof Date ? new Date(task.dueOn.toISOString().substr(0, 10)).getTime() : task.dueOn) : null);
-  const completedTasks = _.groupBy(tasks.filter(task => task.completed), (task: Task) => task.completedAt instanceof Date ? new Date(task.completedAt.toISOString().substr(0, 10)).getTime() : task.completedAt);
+  const completedTasks = _.groupBy(tasks.filter(task => task.complete), (task: Task) => task.completedAt instanceof Date ? new Date(task.completedAt.toISOString().substr(0, 10)).getTime() : task.completedAt);
   const dates = _.uniq([...Object.keys(expectedTasks), ...Object.keys(completedTasks)]).filter(date => date !== 'null').sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
   const totalPoints = calculateTotalPoints(tasks);
   let expectedPoints = totalPoints;
@@ -65,7 +67,7 @@ type TaskConnectionOptions = {
   first?: number,
   after?: string,
   skip?: number,
-  completed?: boolean,
+  complete?: boolean,
   storyPoints?: IntQuery
   hasPoints?: boolean,
   orderBy?: TaskOrder,
@@ -77,7 +79,7 @@ type TaskConnectionOptions = {
   reload?: boolean
 };
 
-const loadRemoteTasks = async (projectId: string, client: Client, { first, after, skip, completed, storyPoints, hasPoints, orderBy, dueOn, completedAt, createdAt, modifiedAt, hasDueDate, reload }: TaskConnectionOptions) => {
+const loadRemoteTasks = async (projectId: string, client: Client, { first, after, skip, complete, storyPoints, hasPoints, orderBy, dueOn, completedAt, createdAt, modifiedAt, hasDueDate, reload }: TaskConnectionOptions) => {
   const order: TaskOrder = orderBy || { field: TaskField.CreatedAt, direction: OrderDirection.Asc };
   let asanaOffset = undefined;
   let tasks = [];
@@ -132,8 +134,8 @@ const loadRemoteTasks = async (projectId: string, client: Client, { first, after
     count = first;
   }
   // Filter tasks
-  if (completed !== undefined) {
-    tasks = tasks.filter(task => task.completed === completed);
+  if (complete !== undefined) {
+    tasks = tasks.filter(task => task.complete === complete);
   }
   if (hasPoints !== undefined) {
     tasks = tasks.filter(task => task.hasPoints === hasPoints);
@@ -303,14 +305,14 @@ const loadRemoteTasks = async (projectId: string, client: Client, { first, after
   };
 };
 
-const loadSavedTasks = async (burndownId: string, { first, after, skip, completed, storyPoints, hasPoints, orderBy, dueOn, completedAt, createdAt, modifiedAt, hasDueDate }: TaskConnectionOptions) => {
+const loadSavedTasks = async (burndownId: string, { first, after, skip, complete, storyPoints, hasPoints, orderBy, dueOn, completedAt, createdAt, modifiedAt, hasDueDate }: TaskConnectionOptions) => {
   const order: TaskOrder = orderBy || { field: TaskField.CreatedAt, direction: OrderDirection.Asc };
   let queryBuilder = getConnection()
     .getRepository(Task)
     .createQueryBuilder('task')
     .innerJoin('task.burndowns', 'taskBurndown', 'taskBurndown.id = :burndownId', { burndownId });
-  if (completed !== undefined) {
-    queryBuilder = queryBuilder.where('task.completed = :completed', { completed });
+  if (complete !== undefined) {
+    queryBuilder = queryBuilder.where('task.completed = :completed', { complete });
   }
   if (hasPoints !== undefined) {
     queryBuilder = queryBuilder.where('task.hasPoints = :hasPoints', { hasPoints });
@@ -461,9 +463,11 @@ const resolvers: IResolvers<{}, ContextType> = {
       return convertWorkspace(await client.workspaces.findById(id));
     },
     async project(obj: any, { id }, { client }) {
+      // Load the project from Asana
       const project = await client.projects.findById(id, {
         opt_fields: 'name,archived,current_status,created_at,modified_at,color,notes,workspace,due_on,due_at,start_on'
       });
+      // Convert the project type
       return convertProject(project);
     },
     async task(obj: any, { id }, { client }) {
@@ -481,7 +485,7 @@ const resolvers: IResolvers<{}, ContextType> = {
       newBurndown.name = burndown.name;
       newBurndown.description = burndown.description;
       newBurndown.project = burndown.projectId;
-      newBurndown.user = Promise.resolve(user);
+      newBurndown.users = Promise.resolve([user]);
       // Save the new burndown chart
       const savedBurndown = await getConnection().getRepository(Burndown).save(newBurndown);
       // Convert the tasks into entities
@@ -491,7 +495,7 @@ const resolvers: IResolvers<{}, ContextType> = {
         taskEntity.taskId = task.taskId;
         taskEntity.name = task.name;
         taskEntity.storyPoints = task.storyPoints;
-        taskEntity.completed = task.completed;
+        taskEntity.complete = task.complete;
         taskEntity.completedAt = task.completedAt;
         taskEntity.dueOn = task.dueOn;
         taskEntity.hasPoints = task.hasPoints;
@@ -587,7 +591,7 @@ const resolvers: IResolvers<{}, ContextType> = {
         first: first || 10,
         orderBy: order as any
       }, {
-        queryBuilder: getConnection().getRepository(Burndown).createQueryBuilder('burndown').where('"userId" = :userId', { userId: user.id }),
+        queryBuilder: getConnection().getRepository(Burndown).createQueryBuilder('burndown').innerJoin('burndown.users', 'burndownUser', 'burndownUser.id = :userId', { userId: user.id }),
         type: 'Burndown',
         alias: 'burndown',
         validateCursor: true,

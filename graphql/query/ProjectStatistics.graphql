@@ -1,0 +1,29 @@
+query ProjectStatistics($id: ID!, $start: Date, $end: Date) {
+  project(id: $id) {
+    id
+    allTasks: tasks(first: 0) {
+      totalCount
+      totalPoints
+    }
+    completeTasks: tasks(first: 0, complete: true) {
+      totalCount
+      totalPoints
+    }
+    incompleteTasks: tasks(first: 0, complete: false) {
+      totalCount
+      totalPoints
+    }
+    missingDueDate: tasks(first: 20, hasDueDate: false) {
+      ...TaskConnection
+    }
+    missingStoryPoints: tasks(first: 20, hasPoints: false) {
+      ...TaskConnection
+    }
+    upcomingTasks: tasks(first: 100, dueOn: { gte: $start, lte: $end }, complete: false, orderBy: { field: DUE_ON, direction: ASC }) {
+      ...TaskConnection
+    }
+    overdueTasks: tasks(first: 20, dueOn: { lt: $start }, complete: false, orderBy: { field: DUE_ON, direction: DESC }) {
+      ...TaskConnection
+    }
+  }
+}

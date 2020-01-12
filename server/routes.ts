@@ -26,7 +26,7 @@ export default function configureRoutes(app: Server, server: Express) {
   });
   
   // Handle all Next.js routes
-  server.get('*', (req, res) => {
+  server.get('*', checkAuth, (req, res) => {
     return handle(req, res);
   });
 }

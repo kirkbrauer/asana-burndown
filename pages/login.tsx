@@ -1,31 +1,43 @@
 import React from 'react';
-import { makeStyles } from '@material-ui/styles';
+import { makeStyles, createStyles } from '@material-ui/styles';
 import Button from '@material-ui/core/Button';
-import { Typography } from '@material-ui/core';
+import { Typography, Theme } from '@material-ui/core';
 
-const useStyles = makeStyles(theme => ({
-  container: {
-    width: '100%',
-    height: '100%',
-    display: 'flex'
-  },
-  loginBox: {
-    marginTop: '30vh',
-    margin: 'auto',
-    width: 350
-  },
-  loginOptions: {
-    width: '100%',
-    display: 'flex',
-    flexDirection: 'row'
-  },
-  checkbox: {
-    marginLeft: 18
-  },
-  textField: {
-    width: '100%'
-  }
-}));
+const useStyles = makeStyles((theme: Theme) =>
+  createStyles({
+    container: {
+      width: '100%',
+      height: '100%',
+      display: 'flex'
+    },
+    loginBox: {
+      marginTop: '30vh',
+      margin: 'auto',
+      width: 350
+    },
+    loginOptions: {
+      width: '100%',
+      display: 'flex',
+      flexDirection: 'row'
+    },
+    checkbox: {
+      marginLeft: 18
+    },
+    textField: {
+      width: '100%'
+    },
+    loginButtonContainer: {
+      display: 'flex',
+      flexDirection: 'row',
+      width: '100%'
+    },
+    loginButton: {
+      margin: 'auto',
+      textDecoration: 'none',
+      marginTop: theme.spacing(3)
+    }
+  })
+);
 
 const Login = () => {
   const classes = useStyles({});
@@ -36,15 +48,16 @@ const Login = () => {
           Asana Burndown Chart Generator
         </Typography>
         <Typography variant="body1" style={{ textAlign: 'center' }}>Created By Kirk Brauer</Typography>
-        <Button 
-            color="primary"
-            variant="contained"
-            onClick={() => {
-              window.location.href = process.env.AUTH_URL!;
-            }}
-          >
-            Login with Asana
-          </Button>
+        <div className={classes.loginButtonContainer}>
+          <a href={process.env.AUTH_URL} className={classes.loginButton} style={{ textDecoration: 'none' }}>
+            <Button
+              color="primary"
+              variant="contained"
+            >
+              Login with Asana
+            </Button>
+          </a>
+        </div>
       </div>
     </div>
   );

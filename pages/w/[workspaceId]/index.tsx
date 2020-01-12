@@ -46,6 +46,15 @@ const Projects: FunctionComponent = () => {
             <Grid item zeroMinWidth key={project.id} xs={12} sm={12} md={6} lg={3} xl={2}>
               <ProjectCard 
                 project={project} 
+                onClickStats={() => {
+                  router.push('/w/[workspaceId]/p/[projectId]', `/w/${workspaceId}/p/${project.id}`);
+                }}
+                onClickTasks={() => {
+                  router.push('/w/[workspaceId]/p/[projectId]/tasks', `/w/${workspaceId}/p/${project.id}/tasks`);
+                }}
+                onClickBurndown={() => {
+                  router.push('/w/[workspaceId]/p/[projectId]/burndown', `/w/${workspaceId}/p/${project.id}/burndown`);
+                }}
                 onClickOpenInAsana={() => window.open(project.url, '_blank')}
                 onClick={() => {
                   router.push('/w/[workspaceId]/p/[projectId]', `/w/${workspaceId}/p/${project.id}`);

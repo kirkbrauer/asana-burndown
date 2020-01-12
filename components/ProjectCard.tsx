@@ -8,6 +8,7 @@ import CardContent from '@material-ui/core/CardContent';
 import Tooltip from '@material-ui/core/Tooltip';
 import TrendingDownIcon from '@material-ui/icons/TrendingDown';
 import AssessmentOutlinedIcon from '@material-ui/icons/AssessmentOutlined';
+import ListAltIcon from '@material-ui/icons/ListAlt';
 import SlideshowOutlinedIcon from '@material-ui/icons/SlideshowOutlined';
 import LaunchIcon from '@material-ui/icons/Launch';
 import Typography from '@material-ui/core/Typography';
@@ -17,8 +18,8 @@ import CardActionArea from '@material-ui/core/CardActionArea';
 type ProjectCardProps = {
   project: ProjectFragment,
   onClick?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void,
-  onClickPresent?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void,
-  onClickReport?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void,
+  onClickStats?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void,
+  onClickTasks?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void,
   onClickBurndown?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void,
   onClickOpenInAsana?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void
 };
@@ -91,7 +92,7 @@ const useStyles = makeStyles<Theme, { projectColor: string }>((theme: Theme) =>
   })
 );
 
-const ProjectCard: FunctionComponent<ProjectCardProps> = ({ project, onClick, onClickPresent, onClickReport, onClickBurndown, onClickOpenInAsana }) => {
+const ProjectCard: FunctionComponent<ProjectCardProps> = ({ project, onClick, onClickStats, onClickTasks, onClickBurndown, onClickOpenInAsana }) => {
   const classes = useStyles({ projectColor: project.color });
   return (
     <Card className={classes.projectCard}>
@@ -103,17 +104,17 @@ const ProjectCard: FunctionComponent<ProjectCardProps> = ({ project, onClick, on
         </CardContent>
       </CardActionArea>
       <CardActions className={classes.projectCardActions}>
-        <Tooltip title="Present" aria-label="present" placement="top">
-          <IconButton onClick={onClickPresent}>
-            <SlideshowOutlinedIcon/>
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Generate Report" aria-label="report" placement="top">
-          <IconButton onClick={onClickReport}>
+        <Tooltip title="Statistics" aria-label="statistics" placement="top">
+          <IconButton onClick={onClickStats}>
             <AssessmentOutlinedIcon/>
           </IconButton>
         </Tooltip>
-        <Tooltip title="View Burndown" aria-label="burndown" placement="top">
+        <Tooltip title="Tasks" aria-label="report" placement="top">
+          <IconButton onClick={onClickTasks}>
+            <ListAltIcon/>
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Burndown" aria-label="burndown" placement="top">
           <IconButton onClick={onClickBurndown}>
             <TrendingDownIcon/>
           </IconButton>

@@ -27,9 +27,9 @@ export class Burndown {
   @JoinTable()
   tasks: Promise<Task[]>;
 
-  @ManyToOne(type => User, user => user.burndowns)
+  @ManyToMany(type => User, user => user.burndowns)
   @JoinTable()
-  user: Promise<User>;
+  users: Promise<User[]>;
 
 }
 

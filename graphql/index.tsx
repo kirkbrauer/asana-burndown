@@ -39,7 +39,7 @@ export type BurndowntasksArgs = {
   first?: Maybe<Scalars['Int']>,
   after?: Maybe<Scalars['String']>,
   skip?: Maybe<Scalars['Int']>,
-  completed?: Maybe<Scalars['Boolean']>,
+  complete?: Maybe<Scalars['Boolean']>,
   storyPoints?: Maybe<IntQuery>,
   hasPoints?: Maybe<Scalars['Boolean']>,
   hasDueDate?: Maybe<Scalars['Boolean']>,
@@ -174,7 +174,7 @@ export type ProjecttasksArgs = {
   first?: Maybe<Scalars['Int']>,
   after?: Maybe<Scalars['String']>,
   skip?: Maybe<Scalars['Int']>,
-  completed?: Maybe<Scalars['Boolean']>,
+  complete?: Maybe<Scalars['Boolean']>,
   storyPoints?: Maybe<IntQuery>,
   hasPoints?: Maybe<Scalars['Boolean']>,
   hasDueDate?: Maybe<Scalars['Boolean']>,
@@ -240,7 +240,7 @@ export type Task = {
   taskId: Scalars['ID'],
   name?: Maybe<Scalars['String']>,
   storyPoints?: Maybe<Scalars['Float']>,
-  completed?: Maybe<Scalars['Boolean']>,
+  complete?: Maybe<Scalars['Boolean']>,
   completedAt?: Maybe<Scalars['DateTime']>,
   dueOn?: Maybe<Scalars['Date']>,
   hasDueDate: Scalars['Boolean'],
@@ -277,7 +277,7 @@ export type TaskInput = {
   taskId: Scalars['ID'],
   name?: Maybe<Scalars['String']>,
   storyPoints?: Maybe<Scalars['Float']>,
-  completed?: Maybe<Scalars['Boolean']>,
+  complete?: Maybe<Scalars['Boolean']>,
   completedAt?: Maybe<Scalars['DateTime']>,
   createdAt: Scalars['DateTime'],
   modifiedAt?: Maybe<Scalars['DateTime']>,
@@ -365,7 +365,7 @@ export type ProjectFragment = (
 
 export type TaskFragment = (
   { __typename?: 'Task' }
-  & Pick<Task, 'id' | 'taskId' | 'name' | 'storyPoints' | 'hasPoints' | 'completed' | 'completedAt' | 'dueOn' | 'createdAt' | 'modifiedAt'>
+  & Pick<Task, 'id' | 'taskId' | 'name' | 'storyPoints' | 'hasPoints' | 'complete' | 'completedAt' | 'dueOn' | 'createdAt' | 'modifiedAt'>
 );
 
 export type TaskConnectionFragment = (
@@ -440,12 +440,49 @@ export type ProjectQuery = (
   )> }
 );
 
+export type ProjectStatisticsQueryVariables = {
+  id: Scalars['ID'],
+  start?: Maybe<Scalars['Date']>,
+  end?: Maybe<Scalars['Date']>
+};
+
+
+export type ProjectStatisticsQuery = (
+  { __typename?: 'Query' }
+  & { project: Maybe<(
+    { __typename?: 'Project' }
+    & Pick<Project, 'id'>
+    & { allTasks: (
+      { __typename?: 'TaskConnection' }
+      & Pick<TaskConnection, 'totalCount' | 'totalPoints'>
+    ), completeTasks: (
+      { __typename?: 'TaskConnection' }
+      & Pick<TaskConnection, 'totalCount' | 'totalPoints'>
+    ), incompleteTasks: (
+      { __typename?: 'TaskConnection' }
+      & Pick<TaskConnection, 'totalCount' | 'totalPoints'>
+    ), missingDueDate: (
+      { __typename?: 'TaskConnection' }
+      & TaskConnectionFragment
+    ), missingStoryPoints: (
+      { __typename?: 'TaskConnection' }
+      & TaskConnectionFragment
+    ), upcomingTasks: (
+      { __typename?: 'TaskConnection' }
+      & TaskConnectionFragment
+    ), overdueTasks: (
+      { __typename?: 'TaskConnection' }
+      & TaskConnectionFragment
+    ) }
+  )> }
+);
+
 export type ProjectTasksQueryVariables = {
   id: Scalars['ID'],
   first?: Maybe<Scalars['Int']>,
   after?: Maybe<Scalars['String']>,
   skip?: Maybe<Scalars['Int']>,
-  completed?: Maybe<Scalars['Boolean']>,
+  complete?: Maybe<Scalars['Boolean']>,
   hasPoints?: Maybe<Scalars['Boolean']>,
   hasDueDate?: Maybe<Scalars['Boolean']>,
   orderBy?: Maybe<TaskOrder>,
@@ -582,7 +619,7 @@ export const TaskFragmentDoc = gql`
   name
   storyPoints
   hasPoints
-  completed
+  complete
   completedAt
   dueOn
   createdAt
@@ -727,11 +764,70 @@ export function useProjectLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHook
 export type ProjectQueryHookResult = ReturnType<typeof useProjectQuery>;
 export type ProjectLazyQueryHookResult = ReturnType<typeof useProjectLazyQuery>;
 export type ProjectQueryResult = ApolloReactCommon.QueryResult<ProjectQuery, ProjectQueryVariables>;
-export const ProjectTasksDocument = gql`
-    query ProjectTasks($id: ID!, $first: Int, $after: String, $skip: Int, $completed: Boolean, $hasPoints: Boolean, $hasDueDate: Boolean, $orderBy: TaskOrder, $storyPoints: IntQuery, $dueOn: DateQuery, $completedAt: DateTimeQuery, $createdAt: DateTimeQuery, $modifiedAt: DateTimeQuery, $reload: Boolean) {
+export const ProjectStatisticsDocument = gql`
+    query ProjectStatistics($id: ID!, $start: Date, $end: Date) {
   project(id: $id) {
     id
-    tasks(first: $first, after: $after, skip: $skip, completed: $completed, hasPoints: $hasPoints, hasDueDate: $hasDueDate, orderBy: $orderBy, storyPoints: $storyPoints, dueOn: $dueOn, completedAt: $completedAt, createdAt: $createdAt, modifiedAt: $modifiedAt, reload: $reload) {
+    allTasks: tasks(first: 0) {
+      totalCount
+      totalPoints
+    }
+    completeTasks: tasks(first: 0, complete: true) {
+      totalCount
+      totalPoints
+    }
+    incompleteTasks: tasks(first: 0, complete: false) {
+      totalCount
+      totalPoints
+    }
+    missingDueDate: tasks(first: 20, hasDueDate: false) {
+      ...TaskConnection
+    }
+    missingStoryPoints: tasks(first: 20, hasPoints: false) {
+      ...TaskConnection
+    }
+    upcomingTasks: tasks(first: 100, dueOn: {gte: $start, lte: $end}, complete: false, orderBy: {field: DUE_ON, direction: ASC}) {
+      ...TaskConnection
+    }
+    overdueTasks: tasks(first: 20, dueOn: {lt: $start}, complete: false, orderBy: {field: DUE_ON, direction: DESC}) {
+      ...TaskConnection
+    }
+  }
+}
+    ${TaskConnectionFragmentDoc}`;
+
+/**
+ * __useProjectStatisticsQuery__
+ *
+ * To run a query within a React component, call `useProjectStatisticsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useProjectStatisticsQuery` returns an object from Apollo Client that contains loading, error, and data properties 
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useProjectStatisticsQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *      start: // value for 'start'
+ *      end: // value for 'end'
+ *   },
+ * });
+ */
+export function useProjectStatisticsQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<ProjectStatisticsQuery, ProjectStatisticsQueryVariables>) {
+        return ApolloReactHooks.useQuery<ProjectStatisticsQuery, ProjectStatisticsQueryVariables>(ProjectStatisticsDocument, baseOptions);
+      }
+export function useProjectStatisticsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<ProjectStatisticsQuery, ProjectStatisticsQueryVariables>) {
+          return ApolloReactHooks.useLazyQuery<ProjectStatisticsQuery, ProjectStatisticsQueryVariables>(ProjectStatisticsDocument, baseOptions);
+        }
+export type ProjectStatisticsQueryHookResult = ReturnType<typeof useProjectStatisticsQuery>;
+export type ProjectStatisticsLazyQueryHookResult = ReturnType<typeof useProjectStatisticsLazyQuery>;
+export type ProjectStatisticsQueryResult = ApolloReactCommon.QueryResult<ProjectStatisticsQuery, ProjectStatisticsQueryVariables>;
+export const ProjectTasksDocument = gql`
+    query ProjectTasks($id: ID!, $first: Int, $after: String, $skip: Int, $complete: Boolean, $hasPoints: Boolean, $hasDueDate: Boolean, $orderBy: TaskOrder, $storyPoints: IntQuery, $dueOn: DateQuery, $completedAt: DateTimeQuery, $createdAt: DateTimeQuery, $modifiedAt: DateTimeQuery, $reload: Boolean) {
+  project(id: $id) {
+    id
+    tasks(first: $first, after: $after, skip: $skip, complete: $complete, hasPoints: $hasPoints, hasDueDate: $hasDueDate, orderBy: $orderBy, storyPoints: $storyPoints, dueOn: $dueOn, completedAt: $completedAt, createdAt: $createdAt, modifiedAt: $modifiedAt, reload: $reload) {
       ...TaskConnection
     }
   }
@@ -754,7 +850,7 @@ export const ProjectTasksDocument = gql`
  *      first: // value for 'first'
  *      after: // value for 'after'
  *      skip: // value for 'skip'
- *      completed: // value for 'completed'
+ *      complete: // value for 'complete'
  *      hasPoints: // value for 'hasPoints'
  *      hasDueDate: // value for 'hasDueDate'
  *      orderBy: // value for 'orderBy'

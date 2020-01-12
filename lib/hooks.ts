@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useViewerQuery, User, useWorkspacesQuery, useWorkspaceQuery, WorkspaceFragment, useProjectsQuery, ProjectFragment, useProjectQuery, AsanaPageInfo, Burndown, useGenerateBurndownQuery, BurndownPoint, Task, PageInfo, useProjectTasksQuery, TaskOrder, DateQuery, DateTimeQuery, IntQuery } from '../graphql';
+import { useViewerQuery, User, useWorkspacesQuery, useWorkspaceQuery, WorkspaceFragment, useProjectsQuery, ProjectFragment, useProjectQuery, AsanaPageInfo, Burndown, useGenerateBurndownQuery, BurndownPoint, Task, PageInfo, useProjectTasksQuery, TaskOrder, DateQuery, DateTimeQuery, IntQuery, useProjectStatisticsQuery } from '../graphql';
 import { useAppContext } from './context';
 
 export const useViewer = () => {
@@ -145,7 +145,7 @@ type TaskConnectionOptions = {
   first?: number,
   after?: string,
   skip?: number,
-  completed?: boolean,
+  complete?: boolean,
   storyPoints?: IntQuery,
   hasPoints?: boolean,
   orderBy?: TaskOrder,
@@ -216,4 +216,53 @@ export const useProjectTasks = (projectId: string, options: TaskConnectionOption
     return refetchFn({ ...options, id: projectId, reload: true }).then(() => setRefetching(false));
   };
   return { tasks, tasksPageInfo, tasksTotalCount, tasksTotalPoints, loading, error, fetchMore, fetchingMore, refetch, refetching };
+};
+
+export const useProjectStatistics = (projectId: string) => {
+  const { data, loading, error } = useProjectStatisticsQuery({
+    variables: {
+      id: projectId,
+      start: new Date(Date.now()).toISOString().substr(0, 10),
+      end: new Date(Date.now() + 1000 * (60 * 60 * 24 * 7)).toISOString().substr(0, 10)
+    }
+  });
+  let totalCount: number;
+  let totalPoints: number;
+  let completeCount: number;
+  let completePoints: number;
+  let incompleteCount: number;
+  let incompletePoints: number;
+  let missingDueDateCount: number;
+  let missingDueDatePoints: number;
+  let missingStoryPointsCount: number;
+  let upcomingCount: number;
+  let upcomingPoints: number;
+  let overdueCount: number;
+  let overduePoints: number;
+  let missingDueDateTasks: Partial<Task>[] = [];
+  let missingStoryPointsTasks: Partial<Task>[] = [];
+  let upcomingTasks: Partial<Task>[] = [];
+  let overdueTasks: Partial<Task>[] = [];
+  if (data) {
+    if (data.project) {
+      totalCount = data.project.allTasks.totalCount;
+      totalPoints = data.project.allTasks.totalPoints;
+      completeCount = data.project.completeTasks.totalCount;
+      completePoints = data.project.completeTasks.totalPoints;
+      incompleteCount = data.project.incompleteTasks.totalCount;
+      incompletePoints = data.project.incompleteTasks.totalPoints;
+      missingDueDateCount = data.project.missingDueDate.totalCount;
+      missingDueDatePoints = data.project.missingDueDate.totalPoints;
+      missingStoryPointsCount = data.project.missingStoryPoints.totalCount;
+      upcomingCount = data.project.upcomingTasks.totalCount;
+      upcomingPoints = data.project.upcomingTasks.totalPoints;
+      overdueCount = data.project.overdueTasks.totalCount;
+      overduePoints = data.project.overdueTasks.totalPoints;
+      missingDueDateTasks = data.project.missingDueDate.edges.map(edge => edge.node);
+      missingStoryPointsTasks = data.project.missingStoryPoints.edges.map(edge => edge.node);
+      upcomingTasks = data.project.upcomingTasks.edges.map(edge => edge.node);
+      overdueTasks = data.project.overdueTasks.edges.map(edge => edge.node);
+    }
+  }
+  return { loading, totalCount, totalPoints, completeCount, completePoints, incompleteCount, incompletePoints, missingDueDateCount, missingDueDatePoints, missingStoryPointsCount, upcomingCount, upcomingPoints, overdueCount, overduePoints, missingDueDateTasks, missingStoryPointsTasks, upcomingTasks, overdueTasks };
 };

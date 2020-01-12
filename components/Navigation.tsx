@@ -1,4 +1,4 @@
-import React, { useState, MouseEvent, FunctionComponent } from 'react';
+import React, { useState, MouseEvent, FunctionComponent, useEffect } from 'react';
 import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
@@ -144,7 +144,7 @@ const Navigation: FunctionComponent = ({ children }) => {
       name: 'Projects',
       icon: <HomeIcon/>
     },
-    {
+    /*{
       route: '/w/[workspaceId]/recent',
       path: '/recent',
       name: 'Recent',
@@ -161,7 +161,7 @@ const Navigation: FunctionComponent = ({ children }) => {
       path: '/reports',
       name: 'Reports',
       icon: <InsertChartOutlinedIcon/>
-    }
+    }*/
   ];
 
   let userInfo;

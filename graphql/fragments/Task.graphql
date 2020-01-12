@@ -4,7 +4,7 @@ fragment Task on Task {
   name
   storyPoints
   hasPoints
-  completed
+  complete
   completedAt
   dueOn
   createdAt

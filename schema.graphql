@@ -92,7 +92,7 @@ type Burndown {
   project: Project!
   createdAt: DateTime
   modifiedAt: DateTime
-  tasks(first: Int, after: String, skip: Int, completed: Boolean, storyPoints: IntQuery, hasPoints: Boolean, hasDueDate: Boolean, orderBy: TaskOrder, dueOn: DateQuery, completedAt: DateTimeQuery, createdAt: DateTimeQuery, modifiedAt: DateTimeQuery, reload: Boolean): TaskConnection!
+  tasks(first: Int, after: String, skip: Int, complete: Boolean, storyPoints: IntQuery, hasPoints: Boolean, hasDueDate: Boolean, orderBy: TaskOrder, dueOn: DateQuery, completedAt: DateTimeQuery, createdAt: DateTimeQuery, modifiedAt: DateTimeQuery, reload: Boolean): TaskConnection!
   path: [BurndownPoint]!
   user: User!
 }
@@ -122,7 +122,7 @@ type Project {
   modifiedAt: DateTime!
   dueOn: Date
   startOn: Date
-  tasks(first: Int, after: String, skip: Int, completed: Boolean, storyPoints: IntQuery, hasPoints: Boolean, hasDueDate: Boolean, orderBy: TaskOrder, dueOn: DateQuery, completedAt: DateTimeQuery, createdAt: DateTimeQuery, modifiedAt: DateTimeQuery, reload: Boolean): TaskConnection!
+  tasks(first: Int, after: String, skip: Int, complete: Boolean, storyPoints: IntQuery, hasPoints: Boolean, hasDueDate: Boolean, orderBy: TaskOrder, dueOn: DateQuery, completedAt: DateTimeQuery, createdAt: DateTimeQuery, modifiedAt: DateTimeQuery, reload: Boolean): TaskConnection!
   burndowns(first: Int, after: String, orderBy: BurndownOrder): BurndownConnection!
   burndown: Burndown!
   workspace: Workspace!
@@ -152,7 +152,7 @@ type Task {
   taskId: ID!
   name: String
   storyPoints: Float
-  completed: Boolean
+  complete: Boolean
   completedAt: DateTime
   dueOn: Date
   hasDueDate: Boolean!
@@ -166,7 +166,7 @@ input TaskInput {
   taskId: ID!
   name: String
   storyPoints: Float
-  completed: Boolean
+  complete: Boolean
   completedAt: DateTime
   createdAt: DateTime!
   modifiedAt: DateTime

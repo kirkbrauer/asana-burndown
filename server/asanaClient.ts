@@ -121,7 +121,7 @@ export function convertTask(task: asana.resources.Tasks.Type): Task {
     storyPoints: custom_field ? (custom_field as any).number_value ? (custom_field as any).number_value : 1 : 1,
     hasPoints: custom_field ? (custom_field as any).number_value ? true : false : false,
     hasDueDate: Boolean(task.due_on),
-    completed: task.completed,
+    complete: task.completed,
     completedAt: task.completed_at ? new Date(task.completed_at) : null,
     dueOn: task.due_on ? new Date(task.due_on) : null,
     createdAt: task.created_at ? new Date(task.created_at) : null,

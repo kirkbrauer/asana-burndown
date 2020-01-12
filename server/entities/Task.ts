@@ -17,7 +17,7 @@ export class Task {
   storyPoints: number;
 
   @Column()
-  completed: boolean;
+  complete: boolean;
 
   @Column({ nullable: true, type: 'timestamp' })
   completedAt?: Date;
