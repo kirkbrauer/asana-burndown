@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "nodemon",
-    "build": "tsc -p tsconfig.server.json && next build",
-    "start": "npm run build && cp schema.graphql build/schema.graphql && NODE_ENV=production node build/server/index.js",
+    "build": "tsc -p tsconfig.server.json && cp schema.graphql build/schema.graphql && next build",
+    "start": "NODE_ENV=production node build/server/index.js",
     "generate": "graphql-codegen"
   },
   "dependencies": {
