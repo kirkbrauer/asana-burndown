@@ -213,4 +213,5 @@ type Query {
 
 type Mutation {
   saveBurndown(burndown: BurndownInput!): Burndown!
+  updateTask(id: ID!, data: TaskInput!): Task!
 }

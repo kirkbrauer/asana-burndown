@@ -18,8 +18,8 @@ import Checkbox from '@material-ui/core/Checkbox';
 import Typography from '@material-ui/core/Typography';
 import Moment from 'react-moment';
 import { KeyboardDateTimePicker, KeyboardDatePicker } from '@material-ui/pickers';
-import { DataTypeProvider, PagingState, CustomPaging, SortingState, TableColumnWidthInfo, Sorting, FilteringState, Filter } from '@devexpress/dx-react-grid';
-import { Grid, Table, TableHeaderRow, PagingPanel, TableColumnVisibility, TableColumnResizing, Toolbar, ColumnChooser, TableFilterRow } from '@devexpress/dx-react-grid-material-ui';
+import { DataTypeProvider, PagingState, CustomPaging, SortingState, TableColumnWidthInfo, Sorting, FilteringState, Filter, EditingState } from '@devexpress/dx-react-grid';
+import { Grid, Table, TableHeaderRow, PagingPanel, TableColumnVisibility, TableColumnResizing, Toolbar, ColumnChooser, TableFilterRow, TableEditColumn, TableEditRow } from '@devexpress/dx-react-grid-material-ui';
 import { TaskField, OrderDirection, DateTimeQuery, IntQuery, DateQuery } from '../../../../../graphql';
 
 const useStyles = makeStyles(theme =>
@@ -95,9 +95,10 @@ const DateTimeEditor = ({ value, onValueChange }) => {
   );
 };
 
-const DateEditor = ({ value, onValueChange }) => {
+const DateEditor = ({ value, onValueChange, disabled }) => {
   return (
     <KeyboardDatePicker
+      disabled={disabled}
       variant="inline"
       format="MM/dd/yy"
       margin="dense"
@@ -224,7 +225,7 @@ const COLUMN_WIDTHS: TableColumnWidthInfo[] = [
   { columnName: 'hasPoints', width: 'auto' }
 ];
 
-const ProjectTasks: NextPage = () => {
+const ProjectTasksPage: NextPage = () => {
   const classes = useStyles({});
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState<HTMLElement>(null);
@@ -234,6 +235,7 @@ const ProjectTasks: NextPage = () => {
   const [hiddenColumnNames, setHiddenColumnNames] = useState(DEFAULT_HIDDEN_COLUMN_NAMES);
   const [columnWidths, setColumnWidths] = useState(COLUMN_WIDTHS);
   const [sorting, setSorting] = useState<Sorting[]>([{ columnName: 'createdAt', direction: 'asc' }]);
+  const [editingCells, setEditingCells] = useState([]);
   const [customFilters, setCustomFilters] = useState(DEFAULT_CUSTOM_FILTERS);
   const [filterPresets, setFilterPresets] = useState(FILTER_PRESETS);
   const [storyPoints, setStoryPoints] = useState<IntQuery>(undefined);
@@ -714,6 +716,27 @@ const ProjectTasks: NextPage = () => {
               { columnName: 'hasPoints', filteringEnabled: true }
             ]}
           />
+          <EditingState
+            onCommitChanges={(changes) => { console.log(changes); }}
+            columnExtensions={[
+              { columnName: 'id', editingEnabled: false },
+              { columnName: 'taskId', editingEnabled: false },
+              { columnName: 'name', editingEnabled: false },
+              { columnName: 'storyPoints', editingEnabled: false },
+              { columnName: 'completedAt', editingEnabled: true },
+              { columnName: 'complete', editingEnabled: false },
+              { columnName: 'dueOn', editingEnabled: false },
+              { columnName: 'due', editingEnabled: false },
+              { columnName: 'createdAt', editingEnabled: false },
+              { columnName: 'created', editingEnabled: false },
+              { columnName: 'modifiedAt', editingEnabled: false },
+              { columnName: 'modified', editingEnabled: false },
+              { columnName: 'hasDueDate', editingEnabled: false },
+              { columnName: 'hasPoints', editingEnabled: false }
+            ]}
+          />
+          <TableEditRow />
+          {/*<TableEditColumn showEditCommand />*/}
           <CustomPaging totalCount={tasksTotalCount} />
           <TableHeaderRow showSortingControls />
           <TableFilterRow showFilterSelector />
@@ -780,4 +803,4 @@ const ProjectTasks: NextPage = () => {
   );
 };
 
-export default ProjectTasks;
+export default ProjectTasksPage;

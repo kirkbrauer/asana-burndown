@@ -55,7 +55,7 @@ const useStyles = makeStyles(theme =>
   })
 );
 
-const ProjectBurndown: NextPage = () => {
+const ProjectBurndownPage: NextPage = () => {
   const classes = useStyles({});
   const router = useRouter();
   const { path, loading: generatingBurndown } = useGenerateBurndown(router.query.projectId as string);
@@ -69,4 +69,4 @@ const ProjectBurndown: NextPage = () => {
   );
 };
 
-export default ProjectBurndown;
+export default ProjectBurndownPage;

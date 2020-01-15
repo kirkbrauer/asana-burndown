@@ -70,14 +70,20 @@ class MyApp extends App<AppProps, {}, AppState> {
     if (router.route !== '/login') {
       // Only wrap app components with navigation
       if (router.route.includes('/w/[workspaceId]/p/[projectId]')) {
-        appContent = (
-          <Navigation>
-            <Content disablePadding>
-              <ProjectHeader/>
-              <Component {...pageProps} />
-            </Content>
-          </Navigation>
-        );
+        if (router.route.includes('/present')) {
+          appContent = (
+            <Component {...pageProps} />
+          );
+        } else {
+          appContent = (
+            <Navigation>
+              <Content disablePadding>
+                <ProjectHeader/>
+                <Component {...pageProps} />
+              </Content>
+            </Navigation>
+          );
+        }
       } else {
         appContent = (
           <Navigation>

@@ -55,7 +55,7 @@ const useStyles = makeStyles(theme =>
   })
 );
 
-const Project: NextPage = () => {
+const ProjectPage: NextPage = () => {
   const classes = useStyles({});
   const router = useRouter();
   const { loading, totalCount, totalPoints, completeCount, completePoints, incompleteCount, incompletePoints, overdueCount, overduePoints, upcomingCount, upcomingPoints, missingStoryPointsCount, missingDueDateCount, missingDueDatePoints } = useProjectStatistics(router.query.projectId as string);
@@ -156,4 +156,4 @@ const Project: NextPage = () => {
   );
 };
 
-export default Project;
+export default ProjectPage;
