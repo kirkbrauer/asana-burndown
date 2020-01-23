@@ -10,14 +10,14 @@ export class Task {
   @Column()
   taskId: string;
 
-  @Column()
-  name: String;
+  @Column({ nullable: true })
+  name?: String;
   
-  @Column()
-  storyPoints: number;
+  @Column({ nullable: true })
+  storyPoints?: number;
 
-  @Column()
-  complete: boolean;
+  @Column({ nullable: true })
+  complete?: boolean;
 
   @Column({ nullable: true, type: 'timestamp' })
   completedAt?: Date;
@@ -31,8 +31,8 @@ export class Task {
   @Column({ type: 'date', nullable: true })
   dueOn?: Date;
 
-  @Column()
-  hasPoints: boolean;
+  @Column({ nullable: true })
+  hasPoints?: boolean;
 
   @ManyToMany(type => Burndown, burndown => burndown.tasks)
   burndowns: Promise<Burndown[]>;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useViewerQuery, User, useWorkspacesQuery, useWorkspaceQuery, WorkspaceFragment, useProjectsQuery, ProjectFragment, useProjectQuery, AsanaPageInfo, Burndown, useGenerateBurndownQuery, BurndownPoint, Task, PageInfo, useProjectTasksQuery, TaskOrder, DateQuery, DateTimeQuery, IntQuery, useProjectStatisticsQuery } from '../graphql';
+import { useViewerQuery, User, useWorkspacesQuery, useWorkspaceQuery, WorkspaceFragment, useProjectsQuery, ProjectFragment, useProjectQuery, AsanaPageInfo, Burndown, useGenerateBurndownQuery, BurndownPoint, Task, PageInfo, useProjectTasksQuery, TaskOrder, DateQuery, DateTimeQuery, IntQuery, useProjectStatisticsQuery, useUpdateTaskMutation, UpdateTaskInput, ProjectTasksDocument, TaskEdge } from '../graphql';
 import { useAppContext } from './context';
 
 export const useViewer = () => {
@@ -265,4 +265,63 @@ export const useProjectStatistics = (projectId: string) => {
     }
   }
   return { loading, totalCount, totalPoints, completeCount, completePoints, incompleteCount, incompletePoints, missingDueDateCount, missingDueDatePoints, missingStoryPointsCount, upcomingCount, upcomingPoints, overdueCount, overduePoints, missingDueDateTasks, missingStoryPointsTasks, upcomingTasks, overdueTasks };
+};
+
+export const useUpdateProjectTask = (projectId: string, options: TaskConnectionOptions) => {
+  const [mutationFn] = useUpdateTaskMutation({
+    update(cache, { data }) {
+      // Attempt to load the project query
+      const { project } = cache.readQuery({ 
+        query: ProjectTasksDocument,
+        variables: {
+          ...options,
+          id: projectId,
+          reload: false
+        }
+      });
+      // Attempt to update the cached query
+      cache.writeQuery({
+        query: ProjectTasksDocument,
+        variables: {
+          ...options,
+          id: projectId,
+          reload: false
+        },
+        data: {
+          project: {
+            ...project,
+            tasks: {
+              ...project.tasks,
+              edges: project.tasks.edges.map((edge: TaskEdge) => {
+                if (edge.node.id === data.updateTask.id) {
+                  return {
+                    ...edge,
+                    node: data.updateTask
+                  };
+                }
+                return edge;
+              })
+            }
+          }
+        }
+      });
+    }
+  });
+  const updateTask = (id: string, data: UpdateTaskInput, task: Task) => {
+    return mutationFn({
+      variables: {
+        id,
+        data
+      },
+      optimisticResponse: {
+        __typename: 'Mutation',
+        updateTask: {
+          ...task,
+          ...data,
+          __typename: 'Task'
+        }
+      }
+    });
+  };
+  return updateTask;
 };

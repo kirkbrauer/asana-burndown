@@ -1,19 +1,21 @@
 import { getConnection } from 'typeorm';
 import { IResolvers } from 'graphql-tools';
-import { encode, decode } from 'opaqueid';
+import { encode, decode, decodeId } from 'opaqueid';
 import { Client } from 'asana';
 import _ from 'lodash';
-import uuid from 'uuid/v4';
+import uuidv5 from 'uuid/v5';
+import uuidv4 from 'uuid/v4';
 import { paginate } from 'typeorm-graphql-pagination';
 import User from './entities/User';
 import Task from './entities/Task';
 import Burndown from './entities/Burndown';
 import { ContextType } from './apollo';
 import { convertProject, convertWorkspace, convertTask, convertUser } from './asanaClient';
-import { Workspace, Project, PhotoSize, Burndown as GraphQLBurndown, Task as GraphQLTask, TaskField, OrderDirection, TaskOrder, BurndownInput, BurndownField, BurndownOrder, BurndownPoint, DateQuery, DateTimeQuery, IntQuery } from './graphql/types';
+import { Workspace, Project, PhotoSize, Burndown as GraphQLBurndown, Task as GraphQLTask, TaskField, OrderDirection, TaskOrder, BurndownInput, BurndownField, BurndownOrder, BurndownPoint, DateQuery, DateTimeQuery, IntQuery, TaskInput } from './graphql/types';
 import redisClient from './redis';
 
 const MAX_RECENTS = process.env.MAX_RECENTS || 20;
+const TASK_ID_NAMESPACE = process.env.TASK_ID_NAMESPACE;
 
 const calculateTotalPoints = (tasks: (Task | GraphQLTask)[]) => {
   let totalPoints = 0;
@@ -79,10 +81,10 @@ type TaskConnectionOptions = {
   reload?: boolean
 };
 
-const loadRemoteTasks = async (projectId: string, client: Client, { first, after, skip, complete, storyPoints, hasPoints, orderBy, dueOn, completedAt, createdAt, modifiedAt, hasDueDate, reload }: TaskConnectionOptions) => {
+const loadRemoteTasks = async (projectId: string, client: Client, { first, after, skip, complete, storyPoints, hasPoints, orderBy, dueOn, completedAt, createdAt, modifiedAt, hasDueDate, reload }: TaskConnectionOptions, burndownId?: string) => {
   const order: TaskOrder = orderBy || { field: TaskField.CreatedAt, direction: OrderDirection.Asc };
   let asanaOffset = undefined;
-  let tasks = [];
+  let tasks: GraphQLTask[] = [];
   // Create a cache key
   const cacheKey = `${projectId}-tasks`;
   // Check if there are chached tasks
@@ -111,8 +113,8 @@ const loadRemoteTasks = async (projectId: string, client: Client, { first, after
       tasks = [...tasks, ...taskData.data.map((task) => {
         const convertedTask = convertTask(task);
         // Set the task ID
-        convertedTask.id = uuid();
-        convertedTask.taskId = task.gid;
+        // Use the burndown ID as a namespace to differentate saved tasks
+        if (burndownId) convertedTask.id = uuidv5(task.gid, burndownId);
         return convertedTask;
       })];
     } while (asanaOffset);
@@ -286,6 +288,22 @@ const loadRemoteTasks = async (projectId: string, client: Client, { first, after
     }
     return bField - aField;
   });
+  // Load the updated task data from the database
+  const dbTasks = await getConnection().getRepository(Task).findByIds(tasks.map(task => task.id));
+  if (dbTasks.length > 0) {
+    // Merge the database tasks with the tasks
+    tasks = tasks.map((task: GraphQLTask) => {
+      const dbTask = dbTasks.find(dbTask => dbTask.id === task.id);
+      if (dbTask) {
+        return {
+          ...task,
+          completedAt: dbTask.completedAt || task.completedAt,
+          dueOn: dbTask.dueOn || task.dueOn
+        } as GraphQLTask;
+      }
+      return task;
+    });
+  }
   // Convert tasks to task edges and generate cursors
   const edges = tasks.map((task, index) => ({
     node: task,
@@ -471,7 +489,15 @@ const resolvers: IResolvers<{}, ContextType> = {
       return convertProject(project);
     },
     async task(obj: any, { id }, { client }) {
-      return convertTask(await client.tasks.findById(id));
+      // Check for a database task
+      const dbTask = await getConnection().getRepository(Task).findOne(uuidv5(id, TASK_ID_NAMESPACE));
+      const convertedTask = convertTask(await client.tasks.findById(id));
+      // Combine the task data
+      return {
+        ...convertedTask,
+        completedAt: dbTask.completedAt || convertedTask.completedAt,
+        dueOn: dbTask.dueOn || convertedTask.dueOn
+      };
     },
     async burndown(obj: any, { id }) {
       return getConnection().getRepository(Burndown).findOne({ id });
@@ -509,6 +535,38 @@ const resolvers: IResolvers<{}, ContextType> = {
       await getConnection().getRepository(Task).save(taskEntities);
       // Return the saved burndown
       return savedBurndown;
+    },
+    async updateTask(obj: any, { id, data }: { id: string, data: TaskInput }, { client }) {
+      // Attempt to find the task in Asana
+      const asanaTask = await client.tasks.findById(id);
+      if (!asanaTask) return null;
+      // Update the task in Asana
+      const updatedTask = convertTask(await client.tasks.update(id, {
+        name: data.name,
+        completed: data.complete
+      }));
+      // Check if the task is already in the database
+      let dbTask = await getConnection().getRepository(Task).findOne(uuidv5(id, TASK_ID_NAMESPACE));
+      // Check if the task was found
+      if (!dbTask) {
+        dbTask = new Task();
+        // Create a new task
+        dbTask.id = uuidv5(id, TASK_ID_NAMESPACE);
+        dbTask.taskId = id;
+        dbTask.createdAt = updatedTask.createdAt;
+      }
+      // Update the task
+      if (data.completedAt !== undefined) dbTask.completedAt = data.completedAt;
+      if (data.complete !== undefined) dbTask.complete = data.complete;
+      if (data.dueOn !== undefined) dbTask.dueOn = data.dueOn;
+      // Save the task
+      await getConnection().getRepository(Task).save(dbTask);
+      // Return the updated task
+      return {
+        ...updatedTask,
+        completedAt: dbTask.completedAt || updatedTask.completedAt,
+        dueOn: dbTask.dueOn || updatedTask.dueOn
+      };
     }
   },
   Burndown: {
@@ -550,7 +608,7 @@ const resolvers: IResolvers<{}, ContextType> = {
         projectId = burndown.project.id;
       }
       // Load the remote tasks
-      return loadRemoteTasks(projectId, client, options);
+      return loadRemoteTasks(projectId, client, options, burndown.id);
     }
   },
   User: {
@@ -658,7 +716,7 @@ const resolvers: IResolvers<{}, ContextType> = {
       return {
         user: user as any,
         createdAt: new Date(Date.now()),
-        id: uuid(),
+        id: uuidv4(), // Generate a random UUID for the burndown
         project: project.id
       };
     },

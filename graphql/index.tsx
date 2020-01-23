@@ -122,11 +122,18 @@ export type IntQuery = {
 export type Mutation = {
    __typename?: 'Mutation',
   saveBurndown: Burndown,
+  updateTask: Task,
 };
 
 
 export type MutationsaveBurndownArgs = {
   burndown: BurndownInput
+};
+
+
+export type MutationupdateTaskArgs = {
+  id: Scalars['ID'],
+  data: UpdateTaskInput
 };
 
 export enum OrderDirection {
@@ -290,6 +297,13 @@ export type TaskOrder = {
   field: TaskField,
 };
 
+export type UpdateTaskInput = {
+  name?: Maybe<Scalars['String']>,
+  complete?: Maybe<Scalars['Boolean']>,
+  completedAt?: Maybe<Scalars['DateTime']>,
+  dueOn?: Maybe<Scalars['Date']>,
+};
+
 
 export type User = {
    __typename?: 'User',
@@ -399,6 +413,20 @@ export type SaveBurndownMutation = (
   & { saveBurndown: (
     { __typename?: 'Burndown' }
     & BurndownFragment
+  ) }
+);
+
+export type UpdateTaskMutationVariables = {
+  id: Scalars['ID'],
+  data: UpdateTaskInput
+};
+
+
+export type UpdateTaskMutation = (
+  { __typename?: 'Mutation' }
+  & { updateTask: (
+    { __typename?: 'Task' }
+    & TaskFragment
   ) }
 );
 
@@ -688,6 +716,39 @@ export function useSaveBurndownMutation(baseOptions?: ApolloReactHooks.MutationH
 export type SaveBurndownMutationHookResult = ReturnType<typeof useSaveBurndownMutation>;
 export type SaveBurndownMutationResult = ApolloReactCommon.MutationResult<SaveBurndownMutation>;
 export type SaveBurndownMutationOptions = ApolloReactCommon.BaseMutationOptions<SaveBurndownMutation, SaveBurndownMutationVariables>;
+export const UpdateTaskDocument = gql`
+    mutation UpdateTask($id: ID!, $data: UpdateTaskInput!) {
+  updateTask(id: $id, data: $data) {
+    ...Task
+  }
+}
+    ${TaskFragmentDoc}`;
+export type UpdateTaskMutationFn = ApolloReactCommon.MutationFunction<UpdateTaskMutation, UpdateTaskMutationVariables>;
+
+/**
+ * __useUpdateTaskMutation__
+ *
+ * To run a mutation, you first call `useUpdateTaskMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateTaskMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateTaskMutation, { data, loading, error }] = useUpdateTaskMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *      data: // value for 'data'
+ *   },
+ * });
+ */
+export function useUpdateTaskMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UpdateTaskMutation, UpdateTaskMutationVariables>) {
+        return ApolloReactHooks.useMutation<UpdateTaskMutation, UpdateTaskMutationVariables>(UpdateTaskDocument, baseOptions);
+      }
+export type UpdateTaskMutationHookResult = ReturnType<typeof useUpdateTaskMutation>;
+export type UpdateTaskMutationResult = ApolloReactCommon.MutationResult<UpdateTaskMutation>;
+export type UpdateTaskMutationOptions = ApolloReactCommon.BaseMutationOptions<UpdateTaskMutation, UpdateTaskMutationVariables>;
 export const GenerateBurndownDocument = gql`
     query GenerateBurndown($projectId: ID!) {
   project(id: $projectId) {

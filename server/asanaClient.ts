@@ -1,9 +1,12 @@
-import asana, { Dispatcher } from 'asana';
+import asana from 'asana';
 import { User as UserEntity } from './entities/User';
 import redisClient from './redis';
 import refresh from 'passport-oauth2-refresh';
 import { Workspace, Project, Task, User } from './graphql/types';
 import { Request, Response, NextFunction } from 'express';
+import uuidv5 from 'uuid/v5';
+
+const TASK_ID_NAMESPACE = process.env.TASK_ID_NAMESPACE;
 
 export function asanaClientMiddleware(req: Request, res: Response, next: NextFunction) {
   if (req.user) {
@@ -115,7 +118,7 @@ export function convertWorkspace(workspace: asana.resources.Workspaces.Type | as
 export function convertTask(task: asana.resources.Tasks.Type): Task {
   const custom_field = task.custom_fields.find(field => (field.name === 'Story Points' && (field as any).number_value));
   return {
-    id: task.gid,
+    id: uuidv5(task.gid, TASK_ID_NAMESPACE),
     taskId: task.gid,
     name: task.name,
     storyPoints: custom_field ? (custom_field as any).number_value ? (custom_field as any).number_value : 1 : 1,

@@ -119,11 +119,18 @@ export type IntQuery = {
 export type Mutation = {
    __typename?: 'Mutation',
   saveBurndown: Burndown,
+  updateTask: Task,
 };
 
 
 export type MutationSaveBurndownArgs = {
   burndown: BurndownInput
+};
+
+
+export type MutationUpdateTaskArgs = {
+  id: Scalars['ID'],
+  data: UpdateTaskInput
 };
 
 export enum OrderDirection {
@@ -285,6 +292,13 @@ export type TaskInput = {
 export type TaskOrder = {
   direction: OrderDirection,
   field: TaskField,
+};
+
+export type UpdateTaskInput = {
+  name?: Maybe<Scalars['String']>,
+  complete?: Maybe<Scalars['Boolean']>,
+  completedAt?: Maybe<Scalars['DateTime']>,
+  dueOn?: Maybe<Scalars['Date']>,
 };
 
 

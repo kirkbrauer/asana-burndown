@@ -117,8 +117,9 @@ const BurndownChart: FunctionComponent<BurndownChartProps> = ({ loading, path: b
         <Legend position="bottom" rootComponent={LegendRootComponent}/>
         <ArgumentAxis showGrid />
         <ValueAxis showGrid />
-        <LineSeries name="Current Path" valueField="completed" argumentField="date" color="red"/>
         <LineSeries name="Expected Path" valueField="expected" argumentField="date" color="blue"/>
+        <LineSeries name="Current Path" valueField="completed" argumentField="date" color="red"/>
+        <LineSeries name="Today" valueField="current" argumentField="date" color="green"/>
       </Chart>
     </div>
   );

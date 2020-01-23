@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { makeStyles, createStyles } from '@material-ui/core/styles';
 import { NextPage } from 'next';
 import Content from '../../../../../components/Content';
-import { useProjectTasks } from '../../../../../lib/hooks';
+import { useProjectTasks, useUpdateProjectTask } from '../../../../../lib/hooks';
 import { useRouter } from 'next/router';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Paper from '@material-ui/core/Paper';
@@ -20,7 +20,7 @@ import Moment from 'react-moment';
 import { KeyboardDateTimePicker, KeyboardDatePicker } from '@material-ui/pickers';
 import { DataTypeProvider, PagingState, CustomPaging, SortingState, TableColumnWidthInfo, Sorting, FilteringState, Filter, EditingState } from '@devexpress/dx-react-grid';
 import { Grid, Table, TableHeaderRow, PagingPanel, TableColumnVisibility, TableColumnResizing, Toolbar, ColumnChooser, TableFilterRow, TableEditColumn, TableEditRow } from '@devexpress/dx-react-grid-material-ui';
-import { TaskField, OrderDirection, DateTimeQuery, IntQuery, DateQuery } from '../../../../../graphql';
+import { TaskField, OrderDirection, DateTimeQuery, IntQuery, DateQuery, Task } from '../../../../../graphql';
 
 const useStyles = makeStyles(theme =>
   createStyles({
@@ -114,10 +114,11 @@ const DateEditor = ({ value, onValueChange, disabled }) => {
   );
 };
 
-const BooleanEditor = ({ value, onValueChange }) => {
+const BooleanEditor = ({ value, onValueChange, disabled }) => {
   return (
     <Select
       value={value || 'none'}
+      disabled={disabled}
       onChange={e => onValueChange(e.target.value)}
       style={{ width: '100%' }}
     >
@@ -235,7 +236,6 @@ const ProjectTasksPage: NextPage = () => {
   const [hiddenColumnNames, setHiddenColumnNames] = useState(DEFAULT_HIDDEN_COLUMN_NAMES);
   const [columnWidths, setColumnWidths] = useState(COLUMN_WIDTHS);
   const [sorting, setSorting] = useState<Sorting[]>([{ columnName: 'createdAt', direction: 'asc' }]);
-  const [editingCells, setEditingCells] = useState([]);
   const [customFilters, setCustomFilters] = useState(DEFAULT_CUSTOM_FILTERS);
   const [filterPresets, setFilterPresets] = useState(FILTER_PRESETS);
   const [storyPoints, setStoryPoints] = useState<IntQuery>(undefined);
@@ -247,6 +247,19 @@ const ProjectTasksPage: NextPage = () => {
   const [hasPoints, setHasPoints] = useState<boolean>(undefined);
   const [complete, setComplete] = useState<boolean>(undefined);
   const { tasks, loading: loadingTasks, tasksTotalCount, refetch, refetching } = useProjectTasks(router.query.projectId as string, {
+    storyPoints,
+    dueOn,
+    completedAt,
+    createdAt,
+    modifiedAt,
+    hasDueDate,
+    hasPoints,
+    complete,
+    first: pageSize,
+    skip: currentPage * pageSize,
+    orderBy: { field: taskColumnToEnum(sorting[0].columnName), direction: sorting[0].direction === 'asc' ? OrderDirection.ASC : OrderDirection.DESC }
+  });
+  const updateTask = useUpdateProjectTask(router.query.projectId as string, {
     storyPoints,
     dueOn,
     completedAt,
@@ -717,7 +730,16 @@ const ProjectTasksPage: NextPage = () => {
             ]}
           />
           <EditingState
-            onCommitChanges={(changes) => { console.log(changes); }}
+            onCommitChanges={(changes) => {
+              // Get the updated task
+              const index = Object.keys(changes.changed)[0];
+              const task: Task = tasks[index];
+              // Update the task in the database
+              updateTask(task.taskId, {
+                completedAt: changes.changed[index].completedAt ? new Date(changes.changed[index].completedAt).toISOString() : null,
+                complete: changes.changed[index].completedAt ? true : false
+              }, task);
+            }}
             columnExtensions={[
               { columnName: 'id', editingEnabled: false },
               { columnName: 'taskId', editingEnabled: false },
@@ -736,7 +758,7 @@ const ProjectTasksPage: NextPage = () => {
             ]}
           />
           <TableEditRow />
-          {/*<TableEditColumn showEditCommand />*/}
+          <TableEditColumn showEditCommand />
           <CustomPaging totalCount={tasksTotalCount} />
           <TableHeaderRow showSortingControls />
           <TableFilterRow showFilterSelector />
