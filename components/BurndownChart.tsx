@@ -2,7 +2,7 @@ import React, { FunctionComponent, useRef, useEffect, useState } from 'react';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles, createStyles } from '@material-ui/core/styles';
-import { Chart, LineSeries, ValueAxis, ArgumentAxis, Title, Legend } from '@devexpress/dx-react-chart-material-ui';
+import { Chart, LineSeries, ScatterSeries, ValueAxis, ArgumentAxis, Title, Legend } from '@devexpress/dx-react-chart-material-ui';
 import { BurndownPoint } from '../graphql';
 import { useWindowWidth } from '@react-hook/window-size/throttled';
 
@@ -10,6 +10,11 @@ type BurndownChartProps = {
   loading: boolean,
   path: BurndownPoint[],
   name?: string
+};
+
+type BurndownChartPoint = BurndownPoint & {
+  current?: number;
+  actualDate?: Date;
 };
 
 const useStyles = makeStyles(theme =>
@@ -55,7 +60,7 @@ const useStyles = makeStyles(theme =>
   })
 );
 
-const condenseData = (burndownPath: BurndownPoint[], maxDates: number) => {
+const condenseData = (burndownPath: BurndownChartPoint[], maxDates: number): BurndownChartPoint[] => {
   let path = burndownPath;
   if (burndownPath.length / maxDates > 1) {
     path = [];
@@ -67,19 +72,21 @@ const condenseData = (burndownPath: BurndownPoint[], maxDates: number) => {
         let expected = 0;
         for (let j = 0; j < valuesPerPoint; j += 1) {
           if (burndownPath[(i * valuesPerPoint) + j]) {
-            completed += burndownPath[(i * valuesPerPoint) + j].completed;
+            if (burndownPath[(i * valuesPerPoint) + j].completed) {
+              completed += burndownPath[(i * valuesPerPoint) + j].completed;
+            }
             expected += burndownPath[(i * valuesPerPoint) + j].expected;
           }
         }
         path.push({
           date,
-          completed,
-          expected
+          expected,
+          completed: burndownPath[i * valuesPerPoint].completed ? completed : undefined
         });
       }
     }
   }
-  return path.map(point => ({ completed: point.completed, expected: point.expected, date: point.date.substr(5, 6) }));
+  return path.map(point => ({ completed: point.completed, expected: point.expected, date: point.date.substr(5, 6), actualDate: new Date(point.date) }));
 };
 
 const BurndownChart: FunctionComponent<BurndownChartProps> = ({ loading, path: burndownPath, name }) => {
@@ -90,7 +97,18 @@ const BurndownChart: FunctionComponent<BurndownChartProps> = ({ loading, path: b
   useEffect(() => {
     if (chartContainerRef.current) {
       const maxDates = Math.floor(chartContainerRef.current.clientWidth / 45);
-      setPath(condenseData(burndownPath, maxDates));
+      // Condense the data
+      const path = condenseData(burndownPath, maxDates);
+      for (let i = 0; i < path.length; i += 1) {
+        if (path[i].actualDate.getTime() <= Date.now() && path[i + 1].actualDate.getTime() >= Date.now()) {
+          path.splice(i, 0, { current: 0, date: path[i].date, actualDate: path[i].actualDate, expected: undefined, completed: undefined });
+          path.splice(i, 0, { current: path[0].expected, date: path[i].date, actualDate: path[i].actualDate, expected: undefined, completed: undefined });
+          break;
+        }
+      }
+      console.log(path);
+      // Add the today mark
+      setPath(path);
     }
   }, [loading, burndownPath, windowWidth]);
   if (loading) {
@@ -114,11 +132,13 @@ const BurndownChart: FunctionComponent<BurndownChartProps> = ({ loading, path: b
     <div ref={chartContainerRef}>
       <Chart data={path}>
         <Title text={name}/>
-        <Legend position="bottom" rootComponent={LegendRootComponent}/>
+        {/*<Legend position="bottom" rootComponent={LegendRootComponent} />*/}
         <ArgumentAxis showGrid />
         <ValueAxis showGrid />
         <LineSeries name="Expected Path" valueField="expected" argumentField="date" color="blue"/>
+        <ScatterSeries valueField="expected" argumentField="date" color="blue" />
         <LineSeries name="Current Path" valueField="completed" argumentField="date" color="red"/>
+        <ScatterSeries valueField="completed" argumentField="date" color="red" />
         <LineSeries name="Today" valueField="current" argumentField="date" color="green"/>
       </Chart>
     </div>

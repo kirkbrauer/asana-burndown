@@ -40,14 +40,14 @@ const generatePath = (tasks: (Task | GraphQLTask)[]) => {
         expectedPoints -= task.storyPoints;
       }
     }
-    if (completedTasks[date]) {
+    if (completedTasks[date] && parseInt(date, 10) <= Date.now()) {
       for (const task of completedTasks[date] as GraphQLTask[]) {
         completedPoints -= task.storyPoints;
       }
     }
     path.push({
       date: new Date(parseInt(date, 10)),
-      completed: completedPoints,
+      completed: parseInt(date, 10) <= Date.now() ? completedPoints : null,
       expected: expectedPoints
     });
   }
@@ -257,8 +257,6 @@ const loadRemoteTasks = async (projectId: string, client: Client, { first, after
   const totalCount = tasks.length;
   // Get the total number of points
   const totalPoints = calculateTotalPoints(tasks);
-  // Slice the tasks
-  tasks = tasks.slice(offset, count + offset);
   const field = taskFieldToString(order.field);
   // Sort the tasks
   tasks = tasks.sort((taskA, taskB) => {
@@ -288,6 +286,8 @@ const loadRemoteTasks = async (projectId: string, client: Client, { first, after
     }
     return bField - aField;
   });
+  // Slice the tasks
+  tasks = tasks.slice(offset, count + offset);
   // Load the updated task data from the database
   const dbTasks = await getConnection().getRepository(Task).findByIds(tasks.map(task => task.id));
   if (dbTasks.length > 0) {

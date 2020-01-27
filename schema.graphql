@@ -48,7 +48,7 @@ type WorkspaceConnection {
 
 type BurndownPoint {
   date: Date!
-  completed: Float!
+  completed: Float
   expected: Float!
 }
 

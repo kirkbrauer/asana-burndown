@@ -85,7 +85,7 @@ export type BurndownOrder = {
 export type BurndownPoint = {
    __typename?: 'BurndownPoint',
   date: Scalars['Date'],
-  completed: Scalars['Float'],
+  completed?: Maybe<Scalars['Float']>,
   expected: Scalars['Float'],
 };
 
