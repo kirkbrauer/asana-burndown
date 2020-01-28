@@ -12,9 +12,12 @@ type BurndownChartProps = {
   name?: string
 };
 
-type BurndownChartPoint = BurndownPoint & {
-  current?: number;
-  actualDate?: Date;
+type BurndownChartPoint = {
+  date?: string,
+  current?: number,
+  actualDate?: Date,
+  expected: number,
+  completed: number
 };
 
 const useStyles = makeStyles(theme =>
@@ -60,53 +63,36 @@ const useStyles = makeStyles(theme =>
   })
 );
 
-const condenseData = (burndownPath: BurndownChartPoint[], maxDates: number): BurndownChartPoint[] => {
-  let path = burndownPath;
-  if (burndownPath.length / maxDates > 1) {
-    path = [];
-    const valuesPerPoint = Math.ceil(burndownPath.length / maxDates);
-    for (let i = 0; i < maxDates; i += 1) {
-      if (burndownPath[i * valuesPerPoint]) {
-        const date = burndownPath[i * valuesPerPoint].date;
-        let completed = 0;
-        let expected = 0;
-        for (let j = 0; j < valuesPerPoint; j += 1) {
-          if (burndownPath[(i * valuesPerPoint) + j]) {
-            if (burndownPath[(i * valuesPerPoint) + j].completed) {
-              completed += burndownPath[(i * valuesPerPoint) + j].completed;
-            }
-            expected += burndownPath[(i * valuesPerPoint) + j].expected;
-          }
-        }
-        path.push({
-          date,
-          expected,
-          completed: burndownPath[i * valuesPerPoint].completed ? completed : undefined
-        });
-      }
-    }
-  }
-  return path.map(point => ({ completed: point.completed, expected: point.expected, date: point.date.substr(5, 6), actualDate: new Date(point.date) }));
-};
-
 const BurndownChart: FunctionComponent<BurndownChartProps> = ({ loading, path: burndownPath, name }) => {
   const classes = useStyles({});
   const windowWidth = useWindowWidth();
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const [path, setPath] = useState<BurndownPoint[]>([]);
+  const [path, setPath] = useState<BurndownChartPoint[]>([]);
+  const [valuesPerDate, setValuesPerDate] = useState(5);
   useEffect(() => {
     if (chartContainerRef.current) {
-      const maxDates = Math.floor(chartContainerRef.current.clientWidth / 45);
-      // Condense the data
-      const path = condenseData(burndownPath, maxDates);
+      // Calculate the maximum number of datess that will fit
+      const maxDates = Math.floor(chartContainerRef.current.clientWidth / 20);
+      // Get the number of values per date
+      const valuesPerDate = Math.ceil(burndownPath.length / maxDates);
+      // Set the values per date state variable
+      setValuesPerDate(valuesPerDate);
+      // Convert the path
+      let path = burndownPath as BurndownChartPoint[];
+      // Add the today line
       for (let i = 0; i < path.length; i += 1) {
-        if (path[i].actualDate.getTime() <= Date.now() && path[i + 1].actualDate.getTime() >= Date.now()) {
+        if (new Date(path[i].date).getTime() <= Date.now() && new Date(path[i + 1].date).getTime() >= Date.now()) {
           path.splice(i, 0, { current: 0, date: path[i].date, actualDate: path[i].actualDate, expected: undefined, completed: undefined });
           path.splice(i, 0, { current: path[0].expected, date: path[i].date, actualDate: path[i].actualDate, expected: undefined, completed: undefined });
           break;
         }
       }
-      console.log(path);
+      // Remove null completed points and condense datess
+      path = path.map(point => ({ 
+        completed: point.completed !== null ? point.completed : undefined,
+        expected: point.expected,
+        date: point.date.substr(5, 6)
+      }));
       // Add the today mark
       setPath(path);
     }
@@ -128,12 +114,22 @@ const BurndownChart: FunctionComponent<BurndownChartProps> = ({ loading, path: b
       </div>
     </div>
   );
+  // Keep track of how many dates are rendered
+  let count = 0;
   return (
     <div ref={chartContainerRef}>
       <Chart data={path}>
         <Title text={name}/>
         {/*<Legend position="bottom" rootComponent={LegendRootComponent} />*/}
-        <ArgumentAxis showGrid />
+        <ArgumentAxis showGrid labelComponent={(props: ArgumentAxis.LabelProps) => {
+          // Increment the count
+          count += 1;
+          // Only render multiples of the number of values per point
+          if (count % valuesPerDate === 0) {
+            return <ArgumentAxis.Label {...props}/>;
+          }
+          return null;
+        }} />
         <ValueAxis showGrid />
         <LineSeries name="Expected Path" valueField="expected" argumentField="date" color="blue"/>
         <ScatterSeries valueField="expected" argumentField="date" color="blue" />
