@@ -15,7 +15,6 @@ type BurndownChartProps = {
 type BurndownChartPoint = {
   date?: string,
   current?: number,
-  actualDate?: Date,
   expected: number,
   completed: number
 };
@@ -68,11 +67,11 @@ const BurndownChart: FunctionComponent<BurndownChartProps> = ({ loading, path: b
   const windowWidth = useWindowWidth();
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const [path, setPath] = useState<BurndownChartPoint[]>([]);
-  const [valuesPerDate, setValuesPerDate] = useState(5);
+  const [valuesPerDate, setValuesPerDate] = useState(8);
   useEffect(() => {
     if (chartContainerRef.current) {
       // Calculate the maximum number of datess that will fit
-      const maxDates = Math.floor(chartContainerRef.current.clientWidth / 20);
+      const maxDates = Math.floor(chartContainerRef.current.clientWidth / 40);
       // Get the number of values per date
       const valuesPerDate = Math.ceil(burndownPath.length / maxDates);
       // Set the values per date state variable
@@ -82,8 +81,8 @@ const BurndownChart: FunctionComponent<BurndownChartProps> = ({ loading, path: b
       // Add the today line
       for (let i = 0; i < path.length; i += 1) {
         if (new Date(path[i].date).getTime() <= Date.now() && new Date(path[i + 1].date).getTime() >= Date.now()) {
-          path.splice(i, 0, { current: 0, date: path[i].date, actualDate: path[i].actualDate, expected: undefined, completed: undefined });
-          path.splice(i, 0, { current: path[0].expected, date: path[i].date, actualDate: path[i].actualDate, expected: undefined, completed: undefined });
+          path.splice(i, 0, { current: 0, date: path[i].date, expected: undefined, completed: undefined });
+          path.splice(i, 0, { current: path[0].expected, date: path[i].date, expected: undefined, completed: undefined });
           break;
         }
       }
@@ -91,6 +90,7 @@ const BurndownChart: FunctionComponent<BurndownChartProps> = ({ loading, path: b
       path = path.map(point => ({ 
         completed: point.completed !== null ? point.completed : undefined,
         expected: point.expected,
+        current: point.current,
         date: point.date.substr(5, 6)
       }));
       // Add the today mark
