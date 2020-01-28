@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useViewerQuery, User, useWorkspacesQuery, useWorkspaceQuery, WorkspaceFragment, useProjectsQuery, ProjectFragment, useProjectQuery, AsanaPageInfo, Burndown, useGenerateBurndownQuery, BurndownPoint, Task, PageInfo, useProjectTasksQuery, TaskOrder, DateQuery, DateTimeQuery, IntQuery, useProjectStatisticsQuery, useUpdateTaskMutation, UpdateTaskInput, ProjectTasksDocument, TaskEdge } from '../graphql';
+import { useViewerQuery, User, useWorkspacesQuery, useWorkspaceQuery, WorkspaceFragment, useProjectsQuery, ProjectFragment, useProjectQuery, AsanaPageInfo, Burndown, useGenerateBurndownQuery, BurndownPoint, Task, PageInfo, useProjectTasksQuery, TaskOrder, DateQuery, DateTimeQuery, IntQuery, useProjectStatisticsQuery, useUpdateTaskMutation, UpdateTaskInput, ProjectTasksDocument, TaskEdge, GenerateBurndownDocument } from '../graphql';
 import { useAppContext } from './context';
 
 export const useViewer = () => {
@@ -126,7 +126,8 @@ export const useGenerateBurndown = (projectId: string) => {
     variables: {
       projectId
     },
-    ssr: false
+    ssr: false,
+    fetchPolicy: 'no-cache'
   });
   let burndown: Partial<Burndown>;
   let path: BurndownPoint[] = [];

@@ -80,9 +80,15 @@ const BurndownChart: FunctionComponent<BurndownChartProps> = ({ loading, path: b
       let path = burndownPath as BurndownChartPoint[];
       // Add the today line
       for (let i = 0; i < path.length; i += 1) {
-        if (new Date(path[i].date).getTime() <= Date.now() && new Date(path[i + 1].date).getTime() >= Date.now()) {
+        if (path[i + 1]) {
+          if (new Date(path[i].date).getTime() <= Date.now() && new Date(path[i + 1].date).getTime() >= Date.now()) {
+            path.splice(i, 0, { current: 0, date: path[i].date, expected: undefined, completed: undefined });
+            path.splice(i, 0, { current: path[0].completed, date: path[i].date, expected: undefined, completed: undefined });
+            break;
+          }
+        } else {
           path.splice(i, 0, { current: 0, date: path[i].date, expected: undefined, completed: undefined });
-          path.splice(i, 0, { current: path[0].expected, date: path[i].date, expected: undefined, completed: undefined });
+          path.splice(i, 0, { current: path[0].completed, date: path[i].date, expected: undefined, completed: undefined });
           break;
         }
       }

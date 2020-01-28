@@ -297,6 +297,7 @@ const loadRemoteTasks = async (projectId: string, client: Client, { first, after
       if (dbTask) {
         return {
           ...task,
+          complete: dbTask.complete === null ? task.complete : dbTask.complete,
           completedAt: dbTask.completedAt || task.completedAt,
           dueOn: dbTask.dueOn || task.dueOn
         } as GraphQLTask;
@@ -495,6 +496,7 @@ const resolvers: IResolvers<{}, ContextType> = {
       // Combine the task data
       return {
         ...convertedTask,
+        complete: dbTask.complete === null ? convertedTask.complete : dbTask.complete,
         completedAt: dbTask.completedAt || convertedTask.completedAt,
         dueOn: dbTask.dueOn || convertedTask.dueOn
       };
@@ -564,6 +566,7 @@ const resolvers: IResolvers<{}, ContextType> = {
       // Return the updated task
       return {
         ...updatedTask,
+        complete: dbTask.complete === null ? updatedTask.complete : dbTask.complete,
         completedAt: dbTask.completedAt || updatedTask.completedAt,
         dueOn: dbTask.dueOn || updatedTask.dueOn
       };
