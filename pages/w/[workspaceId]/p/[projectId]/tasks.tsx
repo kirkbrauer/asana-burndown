@@ -734,11 +734,19 @@ const ProjectTasksPage: NextPage = () => {
               // Get the updated task
               const index = Object.keys(changes.changed)[0];
               const task: Task = tasks[index];
-              // Update the task in the database
-              updateTask(task.taskId, {
-                completedAt: changes.changed[index].completedAt ? new Date(changes.changed[index].completedAt).toISOString() : null,
-                complete: changes.changed[index].completedAt ? true : false
-              }, task);
+              if (changes.changed[index].complete === false) {
+                // Update the task in the database
+                updateTask(task.taskId, {
+                  completedAt: null,
+                  complete: false
+                }, task);
+              } else {
+                // Update the task in the database
+                updateTask(task.taskId, {
+                  completedAt: changes.changed[index].completedAt ? new Date(changes.changed[index].completedAt).toISOString() : null,
+                  complete: changes.changed[index].complete
+                }, task);
+              }
             }}
             columnExtensions={[
               { columnName: 'id', editingEnabled: false },
@@ -746,7 +754,7 @@ const ProjectTasksPage: NextPage = () => {
               { columnName: 'name', editingEnabled: false },
               { columnName: 'storyPoints', editingEnabled: false },
               { columnName: 'completedAt', editingEnabled: true },
-              { columnName: 'complete', editingEnabled: false },
+              { columnName: 'complete', editingEnabled: true },
               { columnName: 'dueOn', editingEnabled: false },
               { columnName: 'due', editingEnabled: false },
               { columnName: 'createdAt', editingEnabled: false },

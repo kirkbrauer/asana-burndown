@@ -309,6 +309,7 @@ export const useUpdateProjectTask = (projectId: string, options: TaskConnectionO
     }
   });
   const updateTask = (id: string, data: UpdateTaskInput, task: Task) => {
+    // Mutate the task
     return mutationFn({
       variables: {
         id,
