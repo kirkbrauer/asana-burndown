@@ -11,10 +11,9 @@ import Task from './entities/Task';
 import Burndown from './entities/Burndown';
 import { ContextType } from './apollo';
 import { convertProject, convertWorkspace, convertTask, convertUser } from './asanaClient';
-import { Workspace, Project, PhotoSize, Burndown as GraphQLBurndown, Task as GraphQLTask, TaskField, OrderDirection, TaskOrder, BurndownInput, BurndownField, BurndownOrder, BurndownPoint, DateQuery, DateTimeQuery, IntQuery, TaskInput } from './graphql/types';
+import { Workspace, Project, PhotoSize, Burndown as GraphQLBurndown, Task as GraphQLTask, TaskField, OrderDirection, TaskOrder, BurndownInput, BurndownField, BurndownOrder, DateQuery, DateTimeQuery, IntQuery, TaskInput } from './graphql/types';
 import redisClient from './redis';
 
-const MAX_RECENTS = process.env.MAX_RECENTS || 20;
 const TASK_ID_NAMESPACE = process.env.TASK_ID_NAMESPACE;
 
 const calculateTotalPoints = (tasks: (Task | GraphQLTask)[]) => {
@@ -24,34 +23,6 @@ const calculateTotalPoints = (tasks: (Task | GraphQLTask)[]) => {
     totalPoints += task.storyPoints;
   }
   return totalPoints;
-};
-
-const generatePath = (tasks: (Task | GraphQLTask)[]) => {
-  const expectedTasks = _.groupBy(tasks, (task: Task) => task.dueOn ? (task.dueOn instanceof Date ? new Date(task.dueOn.toISOString().substr(0, 10)).getTime() : task.dueOn) : null);
-  const completedTasks = _.groupBy(tasks.filter(task => task.complete), (task: Task) => task.completedAt instanceof Date ? new Date(task.completedAt.toISOString().substr(0, 10)).getTime() : task.completedAt);
-  const dates = _.uniq([...Object.keys(expectedTasks), ...Object.keys(completedTasks)]).filter(date => date !== 'null').sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
-  const totalPoints = calculateTotalPoints(tasks);
-  let expectedPoints = totalPoints;
-  let completedPoints = totalPoints;
-  const path: BurndownPoint[] = [];
-  for (const date of dates) {
-    if (expectedTasks[date]) {
-      for (const task of expectedTasks[date] as GraphQLTask[]) {
-        expectedPoints -= task.storyPoints;
-      }
-    }
-    if (completedTasks[date] && parseInt(date, 10) <= Date.now()) {
-      for (const task of completedTasks[date] as GraphQLTask[]) {
-        completedPoints -= task.storyPoints;
-      }
-    }
-    path.push({
-      date: new Date(parseInt(date, 10)),
-      completed: parseInt(date, 10) <= Date.now() ? completedPoints : null,
-      expected: expectedPoints
-    });
-  }
-  return path;
 };
 
 const taskFieldToString = (field: TaskField) => {
@@ -573,7 +544,7 @@ const resolvers: IResolvers<{}, ContextType> = {
     }
   },
   Burndown: {
-    async path(burndown: Burndown | GraphQLBurndown, { }, { client }) {
+    /*async path(burndown: Burndown | GraphQLBurndown, { }, { client }) {
       if (burndown.tasks instanceof Promise) {
         // Load the tasks from the database
         const tasks: Task[] = await getConnection()
@@ -596,7 +567,7 @@ const resolvers: IResolvers<{}, ContextType> = {
       const taskConnection = await loadRemoteTasks(projectId, client, { first: 1000, orderBy: { field: TaskField.CompletedAt, direction: OrderDirection.Asc } });
       const tasks = taskConnection.edges.map(edge => edge.node);
       return generatePath(tasks);
-    },
+    },*/
     async tasks(burndown: Burndown | GraphQLBurndown, options, { client }) {
       // Check if the burndown tasks is a promise
       if (burndown.tasks instanceof Promise) {

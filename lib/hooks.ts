@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useViewerQuery, User, useWorkspacesQuery, useWorkspaceQuery, WorkspaceFragment, useProjectsQuery, ProjectFragment, useProjectQuery, AsanaPageInfo, Burndown, useGenerateBurndownQuery, BurndownPoint, Task, PageInfo, useProjectTasksQuery, TaskOrder, DateQuery, DateTimeQuery, IntQuery, useProjectStatisticsQuery, useUpdateTaskMutation, UpdateTaskInput, ProjectTasksDocument, TaskEdge, GenerateBurndownDocument } from '../graphql';
+import { useViewerQuery, User, useWorkspacesQuery, useWorkspaceQuery, WorkspaceFragment, useProjectsQuery, ProjectFragment, useProjectQuery, AsanaPageInfo, Burndown, Task, PageInfo, useProjectTasksQuery, TaskOrder, DateQuery, DateTimeQuery, IntQuery, useProjectStatisticsQuery, useUpdateTaskMutation, UpdateTaskInput, ProjectTasksDocument, TaskEdge } from '../graphql';
+import _ from 'lodash';
 import { useAppContext } from './context';
 
 export const useViewer = () => {
@@ -121,25 +122,42 @@ export const useProject = (id: string) => {
   return { project, loading, error };
 };
 
+const calculateTotalPoints = (tasks: Partial<Task>[]) => {
+  let totalPoints = 0;
+  // Get the total number of points
+  for (const task of tasks) {
+    totalPoints += task.storyPoints;
+  }
+  return totalPoints;
+};
+
 export const useGenerateBurndown = (projectId: string) => {
-  const { data, loading, error } = useGenerateBurndownQuery({
-    variables: {
-      projectId
-    },
-    ssr: false,
-    fetchPolicy: 'no-cache'
-  });
-  let burndown: Partial<Burndown>;
-  let path: BurndownPoint[] = [];
-  if (data) {
-    if (data.project) {
-      if (data.project.burndown) {
-        burndown = data.project.burndown;
-        path = data.project.burndown.path;
+  const { tasks, loading, error } = useProjectTasks(projectId);
+  const expectedTasks = _.groupBy(tasks, (task: Task) => task.dueOn ? new Date(task.dueOn.substr(0, 10)).getTime() : null);
+  const completedTasks = _.groupBy(tasks.filter(task => task.complete), (task: Task) => new Date(task.completedAt.substr(0, 10)).getTime());
+  const dates = _.uniq([...Object.keys(expectedTasks), ...Object.keys(completedTasks)]).filter(date => date !== 'null').sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+  const totalPoints = calculateTotalPoints(tasks);
+  let expectedPoints = totalPoints;
+  let completedPoints = totalPoints;
+  const path = [];
+  for (const date of dates) {
+    if (expectedTasks[date]) {
+      for (const task of expectedTasks[date]) {
+        expectedPoints -= task.storyPoints;
       }
     }
+    if (completedTasks[date] && parseInt(date, 10) <= Date.now()) {
+      for (const task of completedTasks[date]) {
+        completedPoints -= task.storyPoints;
+      }
+    }
+    path.push({
+      date: new Date(parseInt(date, 10)),
+      completed: parseInt(date, 10) <= Date.now() ? completedPoints : undefined,
+      expected: expectedPoints
+    });
   }
-  return { burndown, path, loading, error };
+  return { path, loading, error };
 };
 
 type TaskConnectionOptions = {
@@ -158,7 +176,7 @@ type TaskConnectionOptions = {
   reload?: boolean
 };
 
-export const useProjectTasks = (projectId: string, options: TaskConnectionOptions) => {
+export const useProjectTasks = (projectId: string, options?: TaskConnectionOptions) => {
   const { data, loading, error, fetchMore: fetchMoreFn, refetch: refetchFn } = useProjectTasksQuery({ 
     variables: {
       ...options,

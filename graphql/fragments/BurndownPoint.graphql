@@ -1,5 +1,0 @@
-fragment BurndownPoint on BurndownPoint {
-  date
-  expected
-  completed
-}

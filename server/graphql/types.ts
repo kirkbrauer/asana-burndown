@@ -27,7 +27,6 @@ export type Burndown = {
   createdAt?: Maybe<Scalars['DateTime']>,
   modifiedAt?: Maybe<Scalars['DateTime']>,
   tasks: TaskConnection,
-  path: Array<Maybe<BurndownPoint>>,
   user: User,
 };
 
@@ -77,13 +76,6 @@ export type BurndownInput = {
 export type BurndownOrder = {
   direction: OrderDirection,
   field: BurndownField,
-};
-
-export type BurndownPoint = {
-   __typename?: 'BurndownPoint',
-  date: Scalars['Date'],
-  completed?: Maybe<Scalars['Float']>,
-  expected: Scalars['Float'],
 };
 
 

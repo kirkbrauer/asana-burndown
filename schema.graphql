@@ -46,12 +46,6 @@ type WorkspaceConnection {
   pageInfo: AsanaPageInfo
 }
 
-type BurndownPoint {
-  date: Date!
-  completed: Float
-  expected: Float!
-}
-
 type PageInfo {
   startCursor: String
   endCursor: String
@@ -93,7 +87,6 @@ type Burndown {
   createdAt: DateTime
   modifiedAt: DateTime
   tasks(first: Int, after: String, skip: Int, complete: Boolean, storyPoints: IntQuery, hasPoints: Boolean, hasDueDate: Boolean, orderBy: TaskOrder, dueOn: DateQuery, completedAt: DateTimeQuery, createdAt: DateTimeQuery, modifiedAt: DateTimeQuery, reload: Boolean): TaskConnection!
-  path: [BurndownPoint]!
   user: User!
 }
 

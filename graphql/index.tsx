@@ -30,7 +30,6 @@ export type Burndown = {
   createdAt?: Maybe<Scalars['DateTime']>,
   modifiedAt?: Maybe<Scalars['DateTime']>,
   tasks: TaskConnection,
-  path: Array<Maybe<BurndownPoint>>,
   user: User,
 };
 
@@ -80,13 +79,6 @@ export type BurndownInput = {
 export type BurndownOrder = {
   direction: OrderDirection,
   field: BurndownField,
-};
-
-export type BurndownPoint = {
-   __typename?: 'BurndownPoint',
-  date: Scalars['Date'],
-  completed?: Maybe<Scalars['Float']>,
-  expected: Scalars['Float'],
 };
 
 
@@ -358,11 +350,6 @@ export type BurndownFragment = (
   & Pick<Burndown, 'id' | 'name' | 'description' | 'createdAt' | 'modifiedAt'>
 );
 
-export type BurndownPointFragment = (
-  { __typename?: 'BurndownPoint' }
-  & Pick<BurndownPoint, 'date' | 'expected' | 'completed'>
-);
-
 export type PageInfoFragment = (
   { __typename?: 'PageInfo' }
   & Pick<PageInfo, 'hasNextPage' | 'hasPreviousPage' | 'startCursor' | 'endCursor'>
@@ -428,27 +415,6 @@ export type UpdateTaskMutation = (
     { __typename?: 'Task' }
     & TaskFragment
   ) }
-);
-
-export type GenerateBurndownQueryVariables = {
-  projectId: Scalars['ID']
-};
-
-
-export type GenerateBurndownQuery = (
-  { __typename?: 'Query' }
-  & { project: Maybe<(
-    { __typename?: 'Project' }
-    & Pick<Project, 'id'>
-    & { burndown: (
-      { __typename?: 'Burndown' }
-      & { path: Array<Maybe<(
-        { __typename?: 'BurndownPoint' }
-        & BurndownPointFragment
-      )>> }
-      & BurndownFragment
-    ) }
-  )> }
 );
 
 export type ProjectQueryVariables = {
@@ -615,13 +581,6 @@ export const BurndownFragmentDoc = gql`
   modifiedAt
 }
     `;
-export const BurndownPointFragmentDoc = gql`
-    fragment BurndownPoint on BurndownPoint {
-  date
-  expected
-  completed
-}
-    `;
 export const ProjectFragmentDoc = gql`
     fragment Project on Project {
   id
@@ -749,46 +708,6 @@ export function useUpdateTaskMutation(baseOptions?: ApolloReactHooks.MutationHoo
 export type UpdateTaskMutationHookResult = ReturnType<typeof useUpdateTaskMutation>;
 export type UpdateTaskMutationResult = ApolloReactCommon.MutationResult<UpdateTaskMutation>;
 export type UpdateTaskMutationOptions = ApolloReactCommon.BaseMutationOptions<UpdateTaskMutation, UpdateTaskMutationVariables>;
-export const GenerateBurndownDocument = gql`
-    query GenerateBurndown($projectId: ID!) {
-  project(id: $projectId) {
-    id
-    burndown {
-      ...Burndown
-      path {
-        ...BurndownPoint
-      }
-    }
-  }
-}
-    ${BurndownFragmentDoc}
-${BurndownPointFragmentDoc}`;
-
-/**
- * __useGenerateBurndownQuery__
- *
- * To run a query within a React component, call `useGenerateBurndownQuery` and pass it any options that fit your needs.
- * When your component renders, `useGenerateBurndownQuery` returns an object from Apollo Client that contains loading, error, and data properties 
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useGenerateBurndownQuery({
- *   variables: {
- *      projectId: // value for 'projectId'
- *   },
- * });
- */
-export function useGenerateBurndownQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<GenerateBurndownQuery, GenerateBurndownQueryVariables>) {
-        return ApolloReactHooks.useQuery<GenerateBurndownQuery, GenerateBurndownQueryVariables>(GenerateBurndownDocument, baseOptions);
-      }
-export function useGenerateBurndownLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GenerateBurndownQuery, GenerateBurndownQueryVariables>) {
-          return ApolloReactHooks.useLazyQuery<GenerateBurndownQuery, GenerateBurndownQueryVariables>(GenerateBurndownDocument, baseOptions);
-        }
-export type GenerateBurndownQueryHookResult = ReturnType<typeof useGenerateBurndownQuery>;
-export type GenerateBurndownLazyQueryHookResult = ReturnType<typeof useGenerateBurndownLazyQuery>;
-export type GenerateBurndownQueryResult = ApolloReactCommon.QueryResult<GenerateBurndownQuery, GenerateBurndownQueryVariables>;
 export const ProjectDocument = gql`
     query Project($id: ID!) {
   project(id: $id) {
