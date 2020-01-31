@@ -52,6 +52,25 @@ const useStyles = makeStyles(theme =>
     },
     headerContent: {
       padding: theme.spacing(4)
+    },
+    legendContainer: {
+      display: 'flex',
+      marginTop: 16
+    },
+    legend: {
+      margin: 'auto',
+      display: 'flex'
+    },
+    legendItem: {
+      display: 'flex',
+      alignItems: 'center',
+      margin: 8
+    },
+    legendDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      marginRight: 8
     }
   })
 );
@@ -71,6 +90,24 @@ const ProjectBurndownPage: NextPage = () => {
           </div>
         )}
         <BurndownChart loading={generatingBurndown} path={path} />
+        {!generatingBurndown && (
+          <div className={classes.legendContainer}>
+            <div className={classes.legend}>
+              <div className={classes.legendItem}>
+                <div className={classes.legendDot} style={{ backgroundColor: 'red' }}/>
+                <Typography variant="body2">Current Progress</Typography>
+              </div>
+              <div className={classes.legendItem}>
+                <div className={classes.legendDot} style={{ backgroundColor: 'blue' }}/>
+                <Typography variant="body2">Expected Progress</Typography>
+              </div>
+              <div className={classes.legendItem}>
+                <div className={classes.legendDot} style={{ backgroundColor: 'green' }}/>
+                <Typography variant="body2">Today</Typography>
+              </div>
+            </div>
+          </div>
+        )}
       </Paper>
     </Content>
   );
