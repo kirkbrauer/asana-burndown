@@ -2,11 +2,12 @@ import React from 'react';
 import { makeStyles, createStyles } from '@material-ui/core/styles';
 import { NextPage } from 'next';
 import Content from '../../../../../components/Content';
-import { useGenerateBurndown } from '../../../../../lib/hooks';
+import { useGenerateBurndown, useProject } from '../../../../../lib/hooks';
 import { useRouter } from 'next/router';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import BurndownChart from '../../../../../components/BurndownChart';
+import Moment from 'react-moment';
 
 const useStyles = makeStyles(theme =>
   createStyles({
@@ -58,11 +59,17 @@ const useStyles = makeStyles(theme =>
 const ProjectBurndownPage: NextPage = () => {
   const classes = useStyles({});
   const router = useRouter();
+  const { project, loading: loadingProject } = useProject(router.query.projectId as string);
   const { path, loading: generatingBurndown } = useGenerateBurndown(router.query.projectId as string);
   return (
     <Content disableToolbar>
      <Paper className={classes.paperContent}>
-        <Typography variant="h6">Project Burndown</Typography>
+        {!generatingBurndown && (
+          <div style={{ textAlign: 'center' }}>
+            <Typography variant="h6">{loadingProject ? 'Loading...' : project.name}</Typography>
+            <Typography variant="caption">Generated <Moment format="LLLL"/></Typography>
+          </div>
+        )}
         <BurndownChart loading={generatingBurndown} path={path} />
       </Paper>
     </Content>
