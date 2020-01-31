@@ -83,12 +83,12 @@ const BurndownChart: FunctionComponent<BurndownChartProps> = ({ loading, path: b
         if (path[i + 1]) {
           if (new Date(path[i].date).getTime() <= Date.now() && new Date(path[i + 1].date).getTime() >= Date.now()) {
             path.splice(i, 0, { current: 0, date: path[i].date, expected: undefined, completed: undefined });
-            path.splice(i, 0, { current: path[0].completed, date: path[i].date, expected: undefined, completed: undefined });
+            path.splice(i, 0, { current: Math.max(path[0].completed, path[0].expected), date: path[i].date, expected: undefined, completed: undefined });
             break;
           }
         } else {
           path.splice(i, 0, { current: 0, date: path[i].date, expected: undefined, completed: undefined });
-          path.splice(i, 0, { current: path[0].completed, date: path[i].date, expected: undefined, completed: undefined });
+          path.splice(i, 0, { current: Math.max(path[0].completed, path[0].expected), date: path[i].date, expected: undefined, completed: undefined });
           break;
         }
       }
@@ -123,26 +123,34 @@ const BurndownChart: FunctionComponent<BurndownChartProps> = ({ loading, path: b
   // Keep track of how many dates are rendered
   let count = 0;
   return (
-    <div ref={chartContainerRef}>
-      <Chart data={path}>
-        <Title text={name}/>
-        {/*<Legend position="bottom" rootComponent={LegendRootComponent} />*/}
-        <ArgumentAxis showGrid labelComponent={(props: ArgumentAxis.LabelProps) => {
-          // Increment the count
-          count += 1;
-          // Only render multiples of the number of values per point
-          if (count % valuesPerDate === 0) {
-            return <ArgumentAxis.Label {...props}/>;
-          }
-          return null;
-        }} />
-        <ValueAxis showGrid />
-        <LineSeries name="Expected Path" valueField="expected" argumentField="date" color="blue"/>
-        <ScatterSeries valueField="expected" argumentField="date" color="blue" />
-        <LineSeries name="Current Path" valueField="completed" argumentField="date" color="red"/>
-        <ScatterSeries valueField="completed" argumentField="date" color="red" />
-        <LineSeries name="Today" valueField="current" argumentField="date" color="green"/>
-      </Chart>
+    <div style={{ display: 'flex' }}>
+      <div style={{ width: 24, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ writingMode: 'vertical-lr', margin: 'auto', transform: 'rotate(180deg)' }}>Story Points</div>
+      </div>
+      <div style={{ display: 'flex', flex: 1, flexDirection: 'column' }}>
+        <div ref={chartContainerRef} style={{ flex: 1 }}>
+          <Chart data={path}>
+            <Title text={name}/>
+            {/*<Legend position="bottom" rootComponent={LegendRootComponent} />*/}
+            <ArgumentAxis showGrid labelComponent={(props: ArgumentAxis.LabelProps) => {
+              // Increment the count
+              count += 1;
+              // Only render multiples of the number of values per point
+              if (count % valuesPerDate === 0) {
+                return <ArgumentAxis.Label {...props}/>;
+              }
+              return null;
+            }} />
+            <ValueAxis showGrid />
+            <LineSeries name="Expected Path" valueField="expected" argumentField="date" color="blue"/>
+            <ScatterSeries valueField="expected" argumentField="date" color="blue" />
+            <LineSeries name="Current Path" valueField="completed" argumentField="date" color="red"/>
+            <ScatterSeries valueField="completed" argumentField="date" color="red" />
+            <LineSeries name="Today" valueField="current" argumentField="date" color="green"/>
+          </Chart>
+        </div>
+        <p style={{ margin: 'auto', marginTop: 8 }}>Date</p>
+      </div>
     </div>
   );
 };
