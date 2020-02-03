@@ -1,7 +1,7 @@
 import React, { FunctionComponent, useRef, useEffect, useState } from 'react';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Typography from '@material-ui/core/Typography';
-import { makeStyles, createStyles } from '@material-ui/core/styles';
+import { makeStyles, createStyles, useTheme } from '@material-ui/core/styles';
 import { Chart, LineSeries, ScatterSeries, ValueAxis, ArgumentAxis, Title, Legend } from '@devexpress/dx-react-chart-material-ui';
 import { useWindowWidth } from '@react-hook/window-size/throttled';
 
@@ -71,6 +71,7 @@ const BurndownChart: FunctionComponent<BurndownChartProps> = ({ loading, path: b
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const [path, setPath] = useState<BurndownChartPoint[]>([]);
   const [valuesPerDate, setValuesPerDate] = useState(8);
+  const theme = useTheme();
   useEffect(() => {
     if (chartContainerRef.current) {
       // Calculate the maximum number of datess that will fit
@@ -118,8 +119,8 @@ const BurndownChart: FunctionComponent<BurndownChartProps> = ({ loading, path: b
   let count = 0;
   return (
     <div style={{ display: 'flex' }}>
-      <div style={{ width: 24, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ writingMode: 'vertical-lr', margin: 'auto', transform: 'rotate(180deg)' }}>Story Points</div>
+      <div style={{ width: 32, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ writingMode: 'vertical-lr', margin: 'auto', transform: 'rotate(180deg)', fontSize: 18 }}>Story Points</div>
       </div>
       <div style={{ display: 'flex', flex: 1, flexDirection: 'column' }}>
         <div ref={chartContainerRef} style={{ flex: 1 }}>
@@ -131,11 +132,11 @@ const BurndownChart: FunctionComponent<BurndownChartProps> = ({ loading, path: b
               count += 1;
               // Only render multiples of the number of values per point
               if (count % valuesPerDate === 0) {
-                return <ArgumentAxis.Label {...props}/>;
+                return <ArgumentAxis.Label style={{ fill: theme.palette.text.primary, fontWeight: 500 }} {...props}/>;
               }
               return null;
             }} />
-            <ValueAxis showGrid />
+            <ValueAxis showGrid labelComponent={props => <ValueAxis.Label style={{ fill: theme.palette.text.primary, fontWeight: 500 }} {...props} />} />
             <LineSeries name="Expected Path" valueField="expected" argumentField="label" color="blue"/>
             <ScatterSeries valueField="expected" argumentField="label" color="blue" />
             <LineSeries name="Current Path" valueField="completed" argumentField="label" color="red"/>
@@ -143,7 +144,7 @@ const BurndownChart: FunctionComponent<BurndownChartProps> = ({ loading, path: b
             <LineSeries name="Today" valueField="current" argumentField="label" color="green"/>
           </Chart>
         </div>
-        <p style={{ margin: 'auto', marginTop: 8 }}>Date</p>
+        <p style={{ margin: 'auto', marginTop: 8, fontSize: 18 }}>Date</p>
       </div>
     </div>
   );
