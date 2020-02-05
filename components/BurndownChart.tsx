@@ -117,10 +117,11 @@ const BurndownChart: FunctionComponent<BurndownChartProps> = ({ loading, path: b
   }
   // Keep track of how many dates are rendered
   let count = 0;
+  const labelStyle = { fill: theme.palette.text.primary, fontWeight: 500, fontFamily: 'Arial', fontSize: 16 };
   return (
-    <div style={{ display: 'flex' }}>
-      <div style={{ width: 32, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ writingMode: 'vertical-lr', margin: 'auto', transform: 'rotate(180deg)', fontSize: 18 }}>Story Points</div>
+    <div style={{ display: 'flex', fontFamily: 'Arial' }}>
+      <div style={{ width: 48, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ writingMode: 'vertical-lr', margin: 'auto', transform: 'rotate(180deg)', fontSize: 22 }}>Story Points</div>
       </div>
       <div style={{ display: 'flex', flex: 1, flexDirection: 'column' }}>
         <div ref={chartContainerRef} style={{ flex: 1 }}>
@@ -132,11 +133,11 @@ const BurndownChart: FunctionComponent<BurndownChartProps> = ({ loading, path: b
               count += 1;
               // Only render multiples of the number of values per point
               if (count % valuesPerDate === 0) {
-                return <ArgumentAxis.Label style={{ fill: theme.palette.text.primary, fontWeight: 500 }} {...props}/>;
+                return <ArgumentAxis.Label style={labelStyle} {...props}/>;
               }
               return null;
             }} />
-            <ValueAxis showGrid labelComponent={props => <ValueAxis.Label style={{ fill: theme.palette.text.primary, fontWeight: 500 }} {...props} />} />
+            <ValueAxis showGrid labelComponent={props => <ValueAxis.Label style={labelStyle} {...props} />} />
             <LineSeries name="Expected Path" valueField="expected" argumentField="label" color="blue"/>
             <ScatterSeries valueField="expected" argumentField="label" color="blue" />
             <LineSeries name="Current Path" valueField="completed" argumentField="label" color="red"/>
@@ -144,7 +145,7 @@ const BurndownChart: FunctionComponent<BurndownChartProps> = ({ loading, path: b
             <LineSeries name="Today" valueField="current" argumentField="label" color="green"/>
           </Chart>
         </div>
-        <p style={{ margin: 'auto', marginTop: 8, fontSize: 18 }}>Date</p>
+        <p style={{ margin: 'auto', marginTop: 8, fontSize: 22 }}>Date</p>
       </div>
     </div>
   );

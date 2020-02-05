@@ -14,7 +14,8 @@ const useStyles = makeStyles(theme =>
     paperContent: {
       padding: theme.spacing(3),
       marginBottom: theme.spacing(3),
-      position: 'relative'
+      position: 'relative',
+      fontFamily: 'Arial'
     },
     projectDescription: {
       marginTop: theme.spacing(1)
@@ -71,6 +72,10 @@ const useStyles = makeStyles(theme =>
       height: 8,
       borderRadius: 4,
       marginRight: 8
+    },
+    legendLabel: {
+      fontSize: 18,
+      fontFamily: 'Arial'
     }
   })
 );
@@ -85,8 +90,8 @@ const ProjectBurndownPage: NextPage = () => {
      <Paper className={classes.paperContent}>
         {!generatingBurndown && (
           <div style={{ textAlign: 'center' }}>
-            <Typography variant="h6">{loadingProject ? 'Loading...' : project.name}</Typography>
-            <Typography variant="caption">Generated <Moment format="LLLL"/></Typography>
+            <Typography variant="h4" style={{ fontFamily: 'Arial', marginBottom: 8 }}>{loadingProject ? 'Loading...' : project.name}</Typography>
+            <Typography variant="body1" style={{ fontFamily: 'Arial' }}>Generated <Moment format="LLLL"/></Typography>
           </div>
         )}
         <BurndownChart loading={generatingBurndown} path={path} />
@@ -95,15 +100,15 @@ const ProjectBurndownPage: NextPage = () => {
             <div className={classes.legend}>
               <div className={classes.legendItem}>
                 <div className={classes.legendDot} style={{ backgroundColor: 'red' }}/>
-                <Typography variant="body2">Current Progress</Typography>
+                <Typography className={classes.legendLabel}>Current Progress</Typography>
               </div>
               <div className={classes.legendItem}>
                 <div className={classes.legendDot} style={{ backgroundColor: 'blue' }}/>
-                <Typography variant="body2">Expected Progress</Typography>
+                <Typography className={classes.legendLabel}>Expected Progress</Typography>
               </div>
               <div className={classes.legendItem}>
                 <div className={classes.legendDot} style={{ backgroundColor: 'green' }}/>
-                <Typography variant="body2">Today</Typography>
+                <Typography className={classes.legendLabel}>Today</Typography>
               </div>
             </div>
           </div>
